@@ -1,0 +1,14 @@
+{
+  "name": "vibesec",
+  "displayName": "vibeSec",
+  "version": "1.3.0",
+  "description": "Security audit skill for web apps: 48 vulnerability classes plus leaked secrets, evidence from the real code, report saved as vibesec-report.md, fixes only on request.",
+  "author": {
+    "name": "Adrian Troop",
+    "url": "https://github.com/adrianTroop"
+  },
+  "homepage": "https://github.com/adrianTroop/VibeSecSkill",
+  "repository": "https://github.com/adrianTroop/VibeSecSkill",
+  "license": "MIT",
+  "keywords": ["security", "audit", "nextjs", "supabase", "owasp", "pentest"]
+}

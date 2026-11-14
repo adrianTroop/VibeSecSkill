@@ -1,0 +1,17 @@
+{
+  "name": "vibesec",
+  "owner": {
+    "name": "Adrian Troop",
+    "url": "https://github.com/adrianTroop"
+  },
+  "description": "vibeSec: a Claude Code security audit skill for web apps.",
+  "plugins": [
+    {
+      "name": "vibesec",
+      "source": "./",
+      "description": "Security audit skill: 48 vulnerability classes plus leaked secrets, writes vibesec-report.md.",
+      "category": "security",
+      "tags": ["security", "audit", "nextjs", "supabase"]
+    }
+  ]
+}
