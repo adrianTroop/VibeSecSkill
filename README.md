@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/vibesec_banner_2560x800.png" alt="vibeSec, security audit for vibe-coded apps, in plain English" width="100%"></p>
+
 # vibeSec
 
 You built your app with AI. vibeSec checks whether a stranger could break into it, and tells
