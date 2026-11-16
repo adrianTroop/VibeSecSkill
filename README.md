@@ -6,7 +6,7 @@ You built your app with AI. vibeSec checks whether a stranger could break into i
 you in plain English what is wrong, how bad it is, and how to fix it. No security background
 needed.
 
-It is a Claude Code skill that audits a web app for the 48 vulnerabilities vibe-coded projects
+It is a Claude Code skill that audits a web app for the 49 vulnerabilities vibe-coded projects
 ship with most often. It reads the real code, config, env files, migrations and deploy setup,
 never guesses, never changes anything, and writes a report you can act on one fix at a time.
 Claude then fixes the issues with you, one by one, only after you say yes.
@@ -16,7 +16,7 @@ but every check is framework-agnostic where it can be.
 
 ## Install
 
-Piped installs check out the pinned tag `v1.3.0`. Set `VIBESEC_REF` to another tag or branch name to install a different revision.
+Piped installs check out the pinned tag `v1.3.0`. Set `VIBESEC_REF` to another tag or branch name to install a different revision. The check list below is this revision of the repo. The pinned tag stays on the previous release until someone publishes a new one.
 
 One line, all projects:
 
@@ -75,7 +75,7 @@ What happens:
 
 1. Discovery: framework and versions, auth flow, payments, LLM features, env and secret
    surface, public hostnames. Every file read is listed.
-2. The 48 checks below plus a secrets sweep of the working tree and git history. Each item
+2. The 49 checks below plus a secrets sweep of the working tree and git history. Each item
    gets a status (Vulnerable / Safe / Not applicable / Needs manual check), file and lines,
    why, how an attacker would exploit it, and the fix as a code snippet in your stack.
 3. `vibesec-report.md` is written to the project root with a summary table, the top 5 fixes in
@@ -87,18 +87,18 @@ What happens:
 
 | # | Check |
 |---|---|
-| 1 | Next.js: middleware bypass via `x-middleware-subrequest` (CVE-2025-29927), outdated version, missing CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
+| 1 | Next.js: middleware bypass via `x-middleware-subrequest` (CVE-2025-29927), outdated version, missing CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. When the lockfile is inside a published range, also the 3 Nov 2026 cache-partition and Edge cookie-header advisories |
 | 2 | `.git` folder exposed on the live site or copied into build output |
 | 3 | Supabase storage: public buckets with private files, weak storage RLS, guessable paths |
 | 4 | Price from the browser: checkout trusting client-sent price, total, discount or quantity |
-| 5 | Credential stuffing: login with no rate limit, lockout, captcha or breached-password check |
-| 6 | Open database: tables without RLS, service_role key on the client, anon key reaching sensitive tables, DB open to the internet |
+| 5 | Credential stuffing: login with no rate limit, lockout, captcha or breached-password check. Per-IP and per-account limits are separate buckets, not one joined IP and email key |
+| 6 | Open database: tables without RLS, service_role key on the client, anon key reaching sensitive tables, DB open to the internet. Grants, default privileges, and function EXECUTE across migrations, judged separately from RLS |
 | 7 | Polyfill.io and third-party scripts: untrusted CDNs, no Subresource Integrity |
 | 8 | SMS pumping: OTP or SMS endpoints with no rate limit, country limits or captcha |
-| 9 | Prompt injection: LLM or MCP features where user input, pages, files or tool results can override instructions, leak secrets or trigger tools |
-| 10 | Weak JWT: short or default secret, `alg: none`, no server-side verification, long expiry |
+| 9 | Prompt injection: LLM or MCP features where user input, pages, files or tool results can override instructions, leak secrets or trigger tools. Inventory MCP configs and npx or uvx launches; pin them and keep their credentials small |
+| 10 | Weak JWT: short or default secret, `alg: none`, no server-side verification, long expiry, and a required secret that falls back to a literal outside local development |
 | 11 | Race conditions: double-redeem on coupons, rewards, credits or balances |
-| 12 | Account pre-hijacking: pre-registered victim emails, unverified email or OAuth account merging |
+| 12 | Account pre-hijacking: pre-registered victim emails, unverified email or OAuth account merging, and signup hooks that add an organization membership before the invite check |
 | 13 | Subdomain takeover: dangling CNAMEs to deleted Vercel, Netlify, Railway, S3 or GitHub Pages |
 | 14 | SSRF: fetching user URLs without blocking internal IPs and 169.254.169.254 |
 | 15 | Path traversal: user input in file paths, uploads, downloads or storage keys |
@@ -110,14 +110,14 @@ What happens:
 | 21 | HTTP/2 Rapid Reset (CVE-2023-44487) on self-hosted servers and proxies |
 | 22 | bcrypt 72-byte truncation: concatenated fields or long passwords silently cut |
 | 23 | SAML bypass: vulnerable SAML libraries, unsigned assertions, XML signature wrapping |
-| 24 | nOAuth email spoof: OAuth logins (Entra / Azure AD) that link accounts by the editable `email` claim |
+| 24 | nOAuth email spoof: OAuth logins (Entra / Azure AD) that link accounts by the editable `email` claim, including a non-empty `email_verified` string when Better Auth is inside its published range |
 | 25 | GraphQL aliases and batching: 1,000 login or OTP guesses in one request |
 | 26 | 2FA and OTP replay: reusable codes, no attempt limit, skippable 2FA step |
 | 27 | ReDoS: regexes that freeze the server on crafted input |
 | 28 | Request smuggling between your own proxy and app server |
-| 29 | Cache poisoning and deception: cached personal pages, unkeyed headers |
+| 29 | Cache poisoning and deception: cached personal pages, unkeyed headers, and tenant cache keys that do not come from a trusted identity |
 | 30 | Spoofed IP headers: rate limits and allow-lists trusting `X-Forwarded-For` |
-| 31 | Postgres views and `SECURITY DEFINER` functions that bypass RLS |
+| 31 | Postgres views and `SECURITY DEFINER` functions that bypass RLS. Judge the final EXECUTE grants. A scoped public function is allowed |
 | 32 | Weak random tokens: `Math.random()` or timestamps for reset links, invites, OTPs |
 | 33 | Padding oracle and home-made encryption (AES-CBC without a MAC) |
 | 34 | Prototype pollution: `__proto__` in deep merge or body parsing |
@@ -129,13 +129,14 @@ What happens:
 | 40 | XSS: user text or AI output rendered as HTML, `javascript:` links, user SVGs |
 | 41 | SQL and NoSQL injection: raw queries built from user input, Mongo `$ne` tricks |
 | 42 | CORS and CSRF: any site can call your API as the logged-in user |
-| 43 | Mass assignment: a profile update that also sets `role: "admin"` or `credits` |
-| 44 | Unprotected admin pages, Next.js server actions, debug and cron routes |
+| 43 | Mass assignment: a profile update that also sets `role: "admin"`, `credits`, or a server-owned Stripe customer id |
+| 44 | Unprotected admin pages, Next.js server actions, debug and cron routes, preview or share URLs used as the only access control, seeded admin passwords, and `ADMIN_EMAIL` promotion |
 | 45 | File uploads: no type or size check, HTML or SVG served from your domain |
-| 46 | Fake or vulnerable packages: AI-invented names (slopsquatting), typosquats, install scripts |
+| 46 | Fake or vulnerable packages: AI-invented names (slopsquatting), typosquats, install scripts, and MCP servers launched outside package.json |
 | 47 | Unverified webhooks: fake "payment succeeded" events from anyone who finds the URL |
-| 48 | Cookies and sessions: missing `HttpOnly` / `Secure` / `SameSite`, tokens in `localStorage` |
-| + | Hardcoded secrets or API keys in the repo or git history |
+| 48 | Cookies and sessions: missing `HttpOnly` / `Secure` / `SameSite`, tokens in `localStorage`, step-up on sensitive changes, email-change notification, and revocation that a cookie cache can outlive |
+| 49 | Untrusted setup and agent instructions: download-and-run or obfuscated commands in the README, AGENTS.md, CLAUDE.md, install scripts, or CI. Flag them for review. Do not run them |
+| + | Hardcoded secrets or API keys in the repo, git history, agent settings, MCP config, transcripts, or browser bundles. Rotate a key that was already committed |
 
 JWT algorithm confusion is part of #10 and timing attacks on secret compares are part of #20.
 Every finding is explained in plain English first, so you do not need a security background
@@ -190,8 +191,8 @@ Fix:
 ## Safety
 
 - Read-only. The skill may run `git log`, `git grep`, `ls`, `find`, `dig` and a HEAD or GET request
-  against a public URL you give it. It does not run the app, install packages or send traffic
-  to production beyond that.
+  against a public URL you give it. It does not run the app, install packages, run commands it
+  finds in the project under audit, or send traffic to production beyond that.
 - It never prints a secret it finds; it quotes the location and the first 4 characters.
 - The only file it writes is `vibesec-report.md`. Fixes happen only after you approve each one.
 
@@ -202,7 +203,8 @@ skills/vibesec/SKILL.md      the audit (also loads automatically on security req
 .claude-plugin/plugin.json   plugin manifest
 .claude-plugin/marketplace.json  lets /plugin marketplace add adrianTroop/VibeSecSkill work
 install.sh                   installer (piped mode clones tag v1.3.0)
-test.sh                      installer self-check
+test.sh                      installer self-check and guidance regression tests
+tests/                       fixtures and checks for the skill text
 .gitignore                   keeps env files, IDE folders, and reports out of git
 ```
 
