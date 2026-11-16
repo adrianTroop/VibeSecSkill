@@ -9,7 +9,7 @@
     {
       "name": "vibesec",
       "source": "./",
-      "description": "Security audit skill: 48 vulnerability classes plus leaked secrets, writes vibesec-report.md.",
+      "description": "Security audit skill: 49 vulnerability classes plus leaked secrets, writes vibesec-report.md.",
       "category": "security",
       "tags": ["security", "audit", "nextjs", "supabase"]
     }

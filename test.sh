@@ -8,4 +8,5 @@ bash "$here/install.sh" --project >/dev/null
 test -f .claude/skills/vibesec/SKILL.md
 bash "$here/install.sh" --uninstall --project >/dev/null
 test ! -e .claude/skills/vibesec
+python3 "$here/tests/guidance_regressions.py"
 echo "OK"

