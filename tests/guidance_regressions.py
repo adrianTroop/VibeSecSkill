@@ -2,7 +2,9 @@
 """Regression checks for vibeSec guidance.
 
 Confirms the skill, README, and plugin stay in sync, and that small fixtures
-are classified the way the new checks describe. This is not an application scanner.
+match the version rules written in the skill. These fixtures are guidance
+validation. This file is not a security scanner and does not install, download,
+or execute packages.
 """
 
 import json
@@ -52,6 +54,18 @@ REQUIRED_PHRASES = [
     ".claude/settings.local.json",
     "Needs manual check",
     "rotate first",
+    "PYSEC-2026-4388",
+    "agent-framework",
+    "1.26.1",
+    "1.26.2",
+    "1.26.0",
+    "GHSA-5jgj-4vhf-8v76",
+    "4.1.26",
+    "2.17.18",
+    "@clerk/astro",
+    "clerkMiddleware",
+    "will not receive a patch",
+    "newest safe release forever",
 ]
 
 FORBIDDEN_PHRASES = [
@@ -59,6 +73,7 @@ FORBIDDEN_PHRASES = [
     "all @modelcontextprotocol",
     "upgrade to the latest",
     "Upgrade to latest",
+    "webhook.site",
 ]
 
 
@@ -151,6 +166,70 @@ def classify(name: str, src: str) -> str:
             return "ok"
         return "unknown"
 
+    # Guidance validation for check 46. Not a dependency scanner.
+    if name.startswith("pkg_agent_"):
+        return agent_framework_status(src)
+    if name.startswith("pkg_clerk_"):
+        return clerk_astro_status(src)
+
+    return "unknown"
+
+
+def version_tuple(spec: str):
+    base = spec.split("-", 1)[0].split("+", 1)[0]
+    parts = base.split(".")
+    if len(parts) != 3 or not all(part.isdigit() for part in parts):
+        return None
+    return tuple(int(part) for part in parts)
+
+
+def agent_framework_status(src: str) -> str:
+    if "agent-framework" not in src:
+        return "ok"
+    resolved = re.findall(r"(?m)^agent-framework==(\d+\.\d+\.\d+)\s*$", src)
+    resolved += re.findall(
+        r'name = "agent-framework"\s+version = "(\d+\.\d+\.\d+)"', src
+    )
+    if any(version in {"1.26.1", "1.26.2"} for version in resolved):
+        return "finding"
+    if resolved:
+        return "ok"
+    return "unknown"
+
+
+def clerk_affected(spec: str):
+    """Published ranges: <2.17.18, and >=3.0.0 <4.1.26. Prereleases are unknown."""
+    if "-" in spec or "+" in spec:
+        return None
+    version = version_tuple(spec)
+    if version is None:
+        return None
+    if version < (2, 17, 18):
+        return True
+    if (3, 0, 0) <= version < (4, 1, 26):
+        return True
+    return False
+
+
+def clerk_astro_status(src: str) -> str:
+    if "@clerk/astro" not in src:
+        return "ok"
+    resolved = re.findall(r"@clerk/astro@(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.]+)?)", src)
+    if not resolved:
+        return "unknown"
+    affected = [clerk_affected(version) for version in resolved]
+    if any(item is None for item in affected):
+        return "unknown"
+    in_range = any(affected)
+    if not in_range:
+        return "ok"
+    uses_middleware = "clerkMiddleware" in src
+    attribute = bool(re.search(r"\b(?:value|content|alt|title)=", src))
+    text_only = "TEXT_CONTENT_ONLY" in src and not attribute
+    if uses_middleware and attribute:
+        return "finding"
+    if uses_middleware and text_only:
+        return "ok"
     return "unknown"
 
 

@@ -600,6 +600,10 @@ The checks:
   browser and can act as them or steal their session.
 - Fix: render as text (React does this by default), sanitize with DOMPurify when HTML is
   needed, allow only `http`, `https` and `mailto` in user links, and a CSP with nonces (#1).
+- `@clerk/astro` can rewrite server-rendered HTML in `clerkMiddleware` and break out of an
+  attribute when the resolved version is inside GHSA-5jgj-4vhf-8v76. The version ranges,
+  the cases that stay Needs manual check, and the patched releases are in #46. Other Clerk
+  packages are not that advisory.
 
 ### 41. SQL and NoSQL injection
 - Queries built by joining strings with user input: Prisma `$queryRawUnsafe` or
@@ -704,6 +708,50 @@ The checks:
   commit the lockfile, enable Dependabot alerts.
 - MCP servers started with `npx` or `uvx` are in scope even when they are missing from
   `package.json`. Apply the inventory in #9. Do not run them.
+- PyPI package `agent-framework`, advisory PYSEC-2026-4388
+  (https://osv.dev/vulnerability/PYSEC-2026-4388, published 17 Nov 2026). The advisory's
+  version list is exactly `1.26.1` and `1.26.2`. Those two releases were uploaded without
+  authorization and then removed from PyPI. Each added a `.pth` file. Python runs every
+  `.pth` file in site-packages when the interpreter starts, before the app imports anything,
+  so "the code never imports agent-framework" is not a pass. The advisory names `1.26.0` as
+  not affected. A resolved version that is not `1.26.1` or `1.26.2` is not this finding.
+  Do not freeze the project on `1.26.0` as if it were the newest safe release forever.
+- Use resolved evidence. An exact pin (`agent-framework==1.26.1`) or a lockfile entry
+  (`uv.lock`, `poetry.lock`, `Pipfile.lock`, `pdm.lock`) is the version that was selected.
+  A range in `requirements.txt` or `pyproject.toml` (`>=1.26`, `~=1.26`) is only a
+  constraint. Constraint with no lock and no install record: Needs manual check. The
+  package name absent: Not applicable. Do not install the package, download the wheel, or
+  start Python or pip with an interpreter that may already have it. Starting that
+  interpreter runs the `.pth` hook again.
+- If the resolved version is `1.26.1` or `1.26.2`, the dependency choice is Vulnerable.
+  When an install record, image, or CI log shows that version was installed, treat that
+  environment as compromised. Isolate it, replace it from a clean base, and remove the
+  distribution without starting the affected interpreter. Changing the pin in git does not
+  clear a copy that already ran. Then rotate credentials that environment could reach,
+  including cloud identities, CI tokens, and package-registry tokens, and review those
+  audit logs. If you cannot tell whether the bad version was installed, the install itself
+  is Needs manual check, not Safe. Do not print any secret you find while looking.
+- npm package `@clerk/astro` only, GHSA-5jgj-4vhf-8v76
+  (https://github.com/clerk/javascript/security/advisories/GHSA-5jgj-4vhf-8v76,
+  published 18 Nov 2026). Other `@clerk/*` packages are not this advisory. The advisory
+  publishes two ranges: `>=3.0.0 <4.1.26`, patched version `4.1.26`, and `<2.17.18`,
+  patched version `2.17.18`. On the 4.x line the advisory says `4.1.26` or later. On the
+  2.x line it says `2.17.18` or later. `3.x` and `1.x` are inside those ranges and the
+  advisory says they will not receive a patch: move `3.x` to `4.1.26` or later, and `1.x`
+  to `2.17.18` or later. Do not invent a patched `1.x` or `3.x` release. A prerelease the
+  advisory does not name is Needs manual check.
+- The bug needs `clerkMiddleware()` from `@clerk/astro` rewriting server-rendered HTML, and
+  user-controlled text placed in an HTML attribute. The middleware inserts its scripts
+  before every lowercase `</head>` in a streamed HTML chunk, including one inside an
+  attribute value. Text content, prerendered pages, and an app that never calls that middleware are
+  outside this advisory. Resolved version in range plus that pattern: Vulnerable. Resolved
+  version in range, but the middleware or the templates are not in the files you can read:
+  Needs manual check, not Safe. A semver range in `package.json` with no lockfile: Needs
+  manual check. Resolved `2.17.18` or later on 2.x, or resolved `4.1.26` or later on 4.x:
+  not this finding. No `@clerk/astro`: Not applicable.
+- Until the patched release is installed, the advisory's workaround is to remove `<` from
+  user-controlled values before they are rendered into an attribute. A CSP that blocks
+  inline scripts stops the script from running. The broken markup can remain. See #40.
 
 ### 47. Unverified webhooks
 - Every webhook handler: Stripe, Paddle, Lemon Squeezy, Clerk, Supabase auth hooks and
