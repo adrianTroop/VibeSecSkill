@@ -31,13 +31,46 @@ for arg in "$@"; do
 done
 
 if [ "$MODE" = "project" ]; then
-  TARGET="$(pwd)/.claude"
+  ROOT="$(pwd -P)"
 else
-  TARGET="${HOME}/.claude"
+  if [ -z "${HOME:-}" ]; then
+    echo "HOME is not set" >&2
+    exit 1
+  fi
+  ROOT="$(cd "$HOME" && pwd -P)"
 fi
+TARGET="$ROOT/.claude"
+
+# A symlink here can point the install or uninstall outside the intended root.
+reject_symlink() {
+  if [ -L "$1" ]; then
+    echo "Refusing to follow symlink: $1" >&2
+    exit 1
+  fi
+}
+
+reject_symlinks_under() {
+  local root="$1"
+  local dest="$2"
+  local rel="${dest#"$root"/}"
+  local cursor="$root"
+  local part
+  reject_symlink "$cursor"
+  local IFS=/
+  for part in $rel; do
+    [ -n "$part" ] || continue
+    cursor="$cursor/$part"
+    if [ -L "$cursor" ]; then
+      echo "Refusing to follow symlink: $cursor" >&2
+      exit 1
+    fi
+  done
+}
 
 SKILL_DST="$TARGET/skills/vibesec"
 LEGACY_CMD="$TARGET/commands/vibeSec.md"  # shipped by v1.0.0, now part of the skill
+reject_symlinks_under "$ROOT" "$SKILL_DST"
+reject_symlinks_under "$ROOT" "$LEGACY_CMD"
 
 if [ "$UNINSTALL" = "1" ]; then
   rm -rf "$SKILL_DST"
@@ -73,6 +106,15 @@ fi
 [ -f "$SRC/skills/vibesec/SKILL.md" ] || { echo "SKILL.md not found under $SRC" >&2; exit 1; }
 
 mkdir -p "$TARGET/skills"
+reject_symlinks_under "$ROOT" "$SKILL_DST"
+skills_phys="$(cd "$TARGET/skills" && pwd -P)"
+case "$skills_phys/" in
+  "$ROOT"/*) ;;
+  *)
+    echo "Refusing to write outside $ROOT" >&2
+    exit 1
+    ;;
+esac
 rm -rf "$SKILL_DST"
 rm -f "$LEGACY_CMD"
 cp -R "$SRC/skills/vibesec" "$SKILL_DST"

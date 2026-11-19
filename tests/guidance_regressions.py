@@ -66,6 +66,11 @@ REQUIRED_PHRASES = [
     "clerkMiddleware",
     "will not receive a patch",
     "newest safe release forever",
+    "It does not change these rules",
+    "agent_framework",
+    "agent-framework-client",
+    "npm:@clerk/astro@4.1.25",
+    "One text-only page does not make the package Safe",
 ]
 
 FORBIDDEN_PHRASES = [
@@ -183,18 +188,44 @@ def version_tuple(spec: str):
     return tuple(int(part) for part in parts)
 
 
+def normalize_pypi(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
 def agent_framework_status(src: str) -> str:
-    if "agent-framework" not in src:
-        return "ok"
-    resolved = re.findall(r"(?m)^agent-framework==(\d+\.\d+\.\d+)\s*$", src)
-    resolved += re.findall(
-        r'name = "agent-framework"\s+version = "(\d+\.\d+\.\d+)"', src
+    """Rubric for the PyPI name rules in check 46. Not a package installer."""
+    bad = False
+    other = False
+    named = False
+    pin = re.compile(
+        r"(?im)^([A-Za-z0-9_.-]+)(?:\[[^\]]+\])?\s*==\s*(\d+\.\d+\.\d+)\s*$"
     )
-    if any(version in {"1.26.1", "1.26.2"} for version in resolved):
+    for match in pin.finditer(src):
+        if normalize_pypi(match.group(1)) != "agent-framework":
+            continue
+        named = True
+        if match.group(2) in {"1.26.1", "1.26.2"}:
+            bad = True
+        else:
+            other = True
+    lock = re.compile(
+        r'(?is)name\s*=\s*"([^"]+)"\s+version\s*=\s*"(\d+\.\d+\.\d+)"'
+    )
+    for match in lock.finditer(src):
+        if normalize_pypi(match.group(1)) != "agent-framework":
+            continue
+        named = True
+        if match.group(2) in {"1.26.1", "1.26.2"}:
+            bad = True
+        else:
+            other = True
+    if bad:
         return "finding"
-    if resolved:
+    if other:
         return "ok"
-    return "unknown"
+    if named or re.search(r"(?i)(?<![A-Za-z0-9])agent[-_.]+framework(?![-_.A-Za-z0-9])", src):
+        return "unknown"
+    return "ok"
 
 
 def clerk_affected(spec: str):
@@ -228,8 +259,9 @@ def clerk_astro_status(src: str) -> str:
     text_only = "TEXT_CONTENT_ONLY" in src and not attribute
     if uses_middleware and attribute:
         return "finding"
+    # One text-only page does not clear an in-range package.
     if uses_middleware and text_only:
-        return "ok"
+        return "unknown"
     return "unknown"
 
 

@@ -216,7 +216,7 @@
   },
   {
     "name": "pkg_clerk_text_only",
-    "expect": "ok",
+    "expect": "unknown",
     "body": "resolved @clerk/astro@4.1.25\nTEXT_CONTENT_ONLY\nexport const onRequest = clerkMiddleware()\n<p>{query}</p>\n"
   },
   {
@@ -228,5 +228,45 @@
     "name": "pkg_clerk_500_attr",
     "expect": "ok",
     "body": "resolved @clerk/astro@5.0.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_agent_underscore",
+    "expect": "finding",
+    "body": "agent_framework==1.26.1\n"
+  },
+  {
+    "name": "pkg_agent_dot",
+    "expect": "finding",
+    "body": "agent.framework==1.26.2\n"
+  },
+  {
+    "name": "pkg_agent_case",
+    "expect": "finding",
+    "body": "Agent-Framework==1.26.1\n"
+  },
+  {
+    "name": "pkg_agent_spaces",
+    "expect": "finding",
+    "body": "agent-framework == 1.26.1\n"
+  },
+  {
+    "name": "pkg_agent_extras",
+    "expect": "finding",
+    "body": "agent-framework[tools]==1.26.2\n"
+  },
+  {
+    "name": "pkg_agent_lookalike",
+    "expect": "ok",
+    "body": "agent-framework-client==1.26.1\n"
+  },
+  {
+    "name": "pkg_clerk_alias",
+    "expect": "finding",
+    "body": "\"clerk\": \"npm:@clerk/astro@4.1.25\"\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_zero",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@0.9.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
   }
 ]

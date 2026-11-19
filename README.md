@@ -39,7 +39,7 @@ git clone --branch v1.3.0 --depth 1 https://github.com/adrianTroop/VibeSecSkill 
 ./install.sh --uninstall  # remove (add --project for the project copy)
 ```
 
-The installer is idempotent and needs no sudo. It writes only under `~/.claude` or `./.claude`. Re-run it to reinstall the pinned tag.
+The installer is idempotent and needs no sudo. It writes only under `~/.claude` or `./.claude`, and it stops if that directory or a path inside it is a symlink. Running `./install.sh` from a checkout installs the files beside that script. The piped commands above install tag `v1.3.0`. Re-run the same command you used. An old piped command reinstalls the old tag.
 
 As a plugin instead (namespaced as `/vibesec:vibesec`):
 
