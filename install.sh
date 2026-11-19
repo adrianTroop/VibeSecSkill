@@ -41,7 +41,9 @@ else
 fi
 TARGET="$ROOT/.claude"
 
-# A symlink here can point the install or uninstall outside the intended root.
+# Refuse a symlink that is already on the destination path. This is a point-in-time
+# check. It does not take a lock, so it does not close a race if the path is replaced
+# with a symlink after the check and before the write.
 reject_symlink() {
   if [ -L "$1" ]; then
     echo "Refusing to follow symlink: $1" >&2

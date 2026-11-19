@@ -88,10 +88,17 @@ For every item produce exactly these fields:
 The checks:
 
 ### 1. Next.js headers and middleware bypass
-- CVE-2025-29927: a request carrying `x-middleware-subrequest` skips middleware on Next.js
-  11.1.4 to 15.2.2 (fixed in 15.2.3, 14.2.25, 13.5.9, 12.3.5). Read the installed version in
-  the lockfile, not the caret range. If middleware is the only auth gate for any route, that is
-  Critical. Check whether the host (Vercel, Netlify) strips the header; self-hosted does not.
+- CVE-2025-29927, GHSA-f82v-jwr5-mffw (21 Mar 2025). Read the resolved lockfile version,
+  not the caret range. The advisory's affected ranges are `>= 11.1.4 < 12.3.5`,
+  `>= 13.0.0 < 13.5.9`, `>= 14.0.0 < 14.2.25`, and `>= 15.0.0 < 15.2.3`. Patched releases
+  it names: 12.3.5, 13.5.9, 14.2.25, and 15.2.3. It does not name a patched 11.x release.
+  For 11.x, use the workaround in that advisory or move to a patched line. Do not treat
+  this as one span from 11.1.4 through 15.2.2. A release such as 14.2.25 is the fix for
+  its line, not still vulnerable because it is below 15.2.3. The advisory says
+  Vercel-hosted Next.js is protected. Self-hosted `next start` is in scope. Any other
+  host is Needs manual check unless you can see that it drops `x-middleware-subrequest`.
+  If middleware is the only auth gate and the resolved version is inside one of those
+  ranges, that is Critical.
 - Outdated Next.js: compare the resolved lockfile version with the patched release of that
   major line, looked up at audit time from Next.js release notes. A `latest` tag, a caret
   range, or a canary build is not proof that a fix is installed.
@@ -347,11 +354,28 @@ The checks:
 ### 21. HTTP/2 Rapid Reset (CVE-2023-44487)
 - Only for servers the project runs itself: a custom Node `http2` server, nginx, Caddy,
   HAProxy, Envoy, Go `net/http`, Java or .NET servers in `Dockerfile`, compose files, `fly.toml`
-  or k8s manifests. Read the pinned image or binary version. Vulnerable before: Node 18.18.2
-  and 20.8.1, nginx 1.25.3, Go 1.21.3, Envoy 1.27.1, HAProxy and Caddy releases of Oct 2023.
+  or k8s manifests. Read the pinned image or binary version. Compare it with the vendor fix
+  for that release line. One "before version X" rule across products is not valid.
+  - Node.js security release of 13 Oct 2023: 18.x is fixed in 18.18.2, and 20.x is fixed in
+    20.8.1. That post does not give a number for any other major. Those lines are Needs
+    manual check.
+  - Go security release of 10 Oct 2023: Go 1.21.3, Go 1.20.10, and
+    `golang.org/x/net/http2` v0.17.0. Go 1.20.10 is the patched 1.20 release. It is not
+    vulnerable for being numerically below 1.21.3.
+  - Envoy GHSA-jhv4-f7mr-xx76 (10 Oct 2023) does not agree with itself. The patched-versions
+    field lists 1.27.2, 1.26.6, 1.25.11, and 1.24.12. The patches paragraph says 1.27.1,
+    1.26.5, 1.25.10, or 1.24.10. Do not collapse that to "before 1.27.1". The installed
+    minor is Needs manual check against the advisory.
+  - nginx.org's security advisory index does not list CVE-2023-44487. Do not use 1.25.3 as
+    an nginx.org floor. The image is Needs manual check.
+  - HAProxy's own statement says supported HAProxy versions are not affected by the known
+    Rapid Reset vectors. Do not require an October 2023 HAProxy upgrade for this CVE.
+  - Caddy 2.7.5 (11 Oct 2023) says that release fixes HTTP/2 Rapid Reset. A later Caddy
+    release is not re-checked here.
   Also look for limits: nginx `http2_max_concurrent_streams`, `keepalive_requests`.
-- Fully managed hosting (Vercel, Netlify, Cloudflare, Render, Supabase) is Not applicable; say
-  the provider patched it at the edge.
+- Fully managed hosting where the project does not run its own HTTP/2 server (Vercel,
+  Netlify, Cloudflare, Render, Supabase) is Not applicable for this check. Do not say the
+  provider patched it unless that provider's statement is the one you are reading.
 - Fix: upgrade the server or base image, cap concurrent streams, or put it behind a patched
   CDN or managed proxy.
 
@@ -369,8 +393,20 @@ The checks:
 ### 23. SAML bypass
 - Any SAML SSO: `samlify`, `passport-saml`, `@node-saml/node-saml`, `saml2-js`, `xml-crypto`,
   `ruby-saml`, `python3-saml`, `onelogin`, BoxyHQ or a custom XML verifier. Read the installed
-  version in the lockfile and compare with its latest advisories (`xml-crypto` before 6.0.1,
-  `ruby-saml` before 1.18.0 had signature bypasses in 2024 and 2025).
+  version in the lockfile and compare it with the advisory for that line, not one global
+  "before" number.
+  - `xml-crypto` GHSA-2xp3-57p7-qf4v (1 May 2024): `>= 4.0.0 < 6.0.0`, patched 6.0.0.
+    GHSA-9p8x-f768-wp2g and GHSA-x3m8-899r-f7c3 (14 Mar 2025): `<= 6.0.0`, patched 6.0.1,
+    and also 3.2.1 and 2.1.6 on the old lines. 6.0.0 fixes the May 2024 advisory and is
+    still inside the March 2025 range. A 2.x or 3.x install is not safe just because it
+    is below 6.0.1, and it is not unsafe just because it is not 6.0.1. Use the patch named
+    for its line.
+  - `ruby-saml` GHSA-754f-8gm6-c4r2 and GHSA-4vc4-m8qh-g8jm (12 Mar 2025): `<= 1.12.3` or
+    `>= 1.13.0 < 1.18.0`, patched 1.12.4 and 1.18.0. GHSA-9v8j-x534-2fx3 and
+    GHSA-x4h9-gwv3-r4m4 (8 Dec 2025): below 1.18.0, including 1.12.4, patched `>= 1.18.0`.
+    A 1.12.4 pin is not a pass for the December advisories. GHSA-rrqh-93c8-j966 (29 Jul
+    2025) is a separate denial-of-service issue, affected below 1.18.1, patched 1.18.1.
+    Do not treat 1.18.0 as the fix for that one.
 - In the config: `wantAssertionsSigned` off, only the response (not the assertion) signed,
   audience, issuer, `NotBefore`/`NotOnOrAfter` or `InResponseTo` not checked, the IdP
   certificate taken from the message instead of pinned config.

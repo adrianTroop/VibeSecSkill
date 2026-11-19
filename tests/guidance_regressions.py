@@ -71,6 +71,13 @@ REQUIRED_PHRASES = [
     "agent-framework-client",
     "npm:@clerk/astro@4.1.25",
     "One text-only page does not make the package Safe",
+    "GHSA-f82v-jwr5-mffw",
+    "does not name a patched 11.x release",
+    "1.20.10",
+    "GHSA-jhv4-f7mr-xx76",
+    "GHSA-2xp3-57p7-qf4v",
+    "GHSA-9v8j-x534-2fx3",
+    "1.18.1",
 ]
 
 FORBIDDEN_PHRASES = [
@@ -79,6 +86,10 @@ FORBIDDEN_PHRASES = [
     "upgrade to the latest",
     "Upgrade to latest",
     "webhook.site",
+    "11.1.4 to 15.2.2",
+    "Vulnerable before: Node",
+    "nginx 1.25.3",
+    "ruby-saml` before 1.18.0",
 ]
 
 
