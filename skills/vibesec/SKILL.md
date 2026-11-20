@@ -1,5 +1,6 @@
 ---
 name: vibesec
+revision: a7465713f39502d7677e52f32b3dedb441f63ef9bb97af181c8f3ff1ea1a6940
 description: Security audit of a web application codebase and its deploy setup (Next.js, Supabase, auth, payments, OTP, LLM and MCP features, DNS). Use when asked to audit security, find vulnerabilities, check for a CVE, review auth, RLS, headers, secrets or rate limits, or to run a pre-launch security check. Read-only; the only file it writes is vibesec-report.md.
 argument-hint: [folder]
 ---
@@ -11,10 +12,17 @@ You are auditing this project for the 49 vulnerability classes below plus leaked
 The person running this is often not a developer. They built the app with AI and need to know
 what is wrong, how bad it is, and what to change, without security jargon.
 
-Scope: `$ARGUMENTS`. If that is empty, audit the whole project from its root. If it names a
-folder, read code only under that folder, but still read root-level config (package manifests,
-framework config, env files, deploy config, database migrations and policies) because the
-checks depend on them.
+Scope: `$ARGUMENTS`. The project root is the root of the repository you were asked to audit.
+If the argument is empty, audit that whole project. If it names a folder, resolve the path
+and continue only when it is the project root or a directory inside it. Refuse an absolute
+path, a path that starts with `~`, and any path that contains `..` or otherwise leaves the
+project root. Do not read files outside that root. Do not follow a symlink, including one
+inside the project, when its target is outside that root. Do not read the operator's HOME,
+another repository, or credential files outside this project root. When the argument names a
+folder inside the root, read code only under that folder, but still read root-level config
+(package manifests, framework config, env files, deploy config, database migrations and
+policies) from that same project root, because the checks depend on them. Config that sits
+inside this project stays in scope.
 
 ## Rules
 

@@ -16,7 +16,13 @@ but every check is framework-agnostic where it can be.
 
 ## Install
 
-Piped installs check out the pinned tag `v1.3.0`. Set `VIBESEC_REF` to another tag or branch name to install a different revision. The check list below is this revision of the repo. The pinned tag stays on the previous release until someone publishes a new one.
+A checkout install (`./install.sh`) copies the files beside that script. It does not clone, and it does not switch your checkout to another commit. It prints a git revision only when the directory that contains the script is itself a git root. A copy placed inside another repository does not inherit that repository's commit.
+
+A piped install runs whichever `install.sh` the URL returns, and that script then clones a revision. This copy of the script clones `VIBESEC_REF` (default tag `v1.3.0`) and continues only when `git rev-parse HEAD` equals `VIBESEC_SHA` (default `c090c9a70adf62949076e2108fbdec2c60fc9541`). It prints that SHA. To install a different commit you have already identified, set `VIBESEC_REF` and `VIBESEC_SHA` together. A different ref without its own full SHA is refused.
+
+The comparison checks the clone against the SHA written in the script you are already running. On a match, the installed skill files are the bytes of that commit. On a mismatch, or if the SHA is not 40 lowercase hex digits, the script exits before it creates the destination. It does not prove those script bytes came from that commit. Read the script before you pipe it. It does not prove a GitHub tag cannot move, and this repo does not rewrite tag `v1.3.0`. If that tag moves and you run this script, the clone fails the SHA check. The default SHA is tag `v1.3.0`, which already exists and does not contain this check, so the pin is not the commit that introduced it. Moving the pin to a newer release is a separate release step.
+
+The one-line commands below download `install.sh` from tag `v1.3.0`. That tag's script does not contain this SHA check. Those commands keep installing that tag's tree until a later release tag carries the check. The check list further down this page is this revision of the repo, which is not the same tree as tag `v1.3.0`.
 
 One line, all projects:
 
@@ -39,7 +45,7 @@ git clone --branch v1.3.0 --depth 1 https://github.com/adrianTroop/VibeSecSkill 
 ./install.sh --uninstall  # remove (add --project for the project copy)
 ```
 
-The installer is idempotent and needs no sudo. It writes only under `~/.claude` or `./.claude`. Re-run it to reinstall the pinned tag.
+The installer is idempotent and needs no sudo. It writes only under `~/.claude` or `./.claude`. Running `./install.sh` from a checkout installs the files beside the script. Re-run the same command you used. An old piped command reinstalls the script stored at that old tag.
 
 As a plugin instead (namespaced as `/vibesec:vibesec`):
 
@@ -202,8 +208,9 @@ Fix:
 skills/vibesec/SKILL.md      the audit (also loads automatically on security requests)
 .claude-plugin/plugin.json   plugin manifest
 .claude-plugin/marketplace.json  lets /plugin marketplace add adrianTroop/VibeSecSkill work
-install.sh                   installer (piped mode clones tag v1.3.0)
+install.sh                   installer (checkout copies sibling files; piped mode checks a recorded SHA)
 test.sh                      installer self-check and guidance regression tests
+.github/workflows/test.yml   runs test.sh on push and pull request
 tests/                       fixtures and checks for the skill text
 .gitignore                   keeps env files, IDE folders, and reports out of git
 ```
