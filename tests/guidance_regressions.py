@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Regression checks for vibeSec guidance.
+"""Phrase and rubric checks for the skill text.
 
-Confirms the skill, README, and plugin stay in sync, and that small fixtures
-are classified the way the new checks describe. This is not an application scanner.
+A fixture passes when this file's small classifier, or a required phrase, still
+matches the rule written in SKILL.md. That is not a running detector, not an
+assistant, and not evidence that an audit would find the bug. Installer
+boundaries are checked by test.sh. ShellCheck is a separate command.
 """
 
 import hashlib
@@ -57,6 +59,10 @@ REQUIRED_PHRASES = [
     "Refuse an absolute path",
     "directory inside it",
     "that same project root",
+    "Do not follow a symlink",
+    "operator's HOME",
+    "another repository",
+    "credential files outside this project root",
 ]
 
 FORBIDDEN_PHRASES = [

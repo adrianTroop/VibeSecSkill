@@ -62,7 +62,8 @@ content_revision() {
 
 git_revision() {
   local dir="$1"
-  if git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  # Only the directory that contains the script. Do not walk up into another repo.
+  if [ -e "$dir/.git" ] && git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git -C "$dir" rev-parse HEAD
   else
     printf '%s' "unavailable"
