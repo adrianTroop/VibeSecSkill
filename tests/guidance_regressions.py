@@ -52,6 +52,23 @@ REQUIRED_PHRASES = [
     ".claude/settings.local.json",
     "Needs manual check",
     "rotate first",
+    "GHSA-96x6-fvhx-49hg",
+    "4.6.4",
+    "GHSA-p4f5-76q4-ffq7",
+    "6.4.6",
+    "8.3.7",
+    "vite-plus",
+    "GHSA-3m3f-pjv4-x2fp",
+    "1.89.10",
+    "GHSA-pcrw-h46h-c93h",
+    "GHSA-gg4r-jv3p-qx3c",
+    "GHSA-6972-9mcm-vhwj",
+    "GHSA-wr5m-5jph-8m96",
+    "9.11.4",
+    "GHSA-wpqf-h9rq-rg73",
+    "3.28.0",
+    "2.33.9",
+    "patched-versions field on the advisory is empty",
 ]
 
 FORBIDDEN_PHRASES = [
@@ -149,6 +166,180 @@ def classify(name: str, src: str) -> str:
             return "finding"
         if "Welcome" in src and "invoice" not in src:
             return "ok"
+        return "unknown"
+
+    # Rubric for the Nov 2026 advisories in checks 3, 34, 41, and 46.
+    # Not a dependency scanner and not an assistant run.
+    if name.startswith("nov_"):
+        return nov_advisory_status(name, src)
+
+    return "unknown"
+
+
+def version_parts(spec: str):
+    if "-" in spec or "+" in spec:
+        return None
+    bits = spec.split(".")
+    if len(bits) != 3 or not all(bit.isdigit() for bit in bits):
+        return None
+    return tuple(int(bit) for bit in bits)
+
+
+def resolved_version(src: str, package: str):
+    match = re.search(rf"{re.escape(package)}@(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.]+)?)", src)
+    if not match:
+        return None
+    return match.group(1)
+
+
+def nuxt_band(spec: str):
+    version = version_parts(spec)
+    if version is None:
+        return None
+    if (3, 0, 0) <= version < (4, 0, 0):
+        return "eol3"
+    if (4, 0, 0) <= version < (4, 6, 4):
+        return "four"
+    return "out"
+
+
+def vite_in_range(spec: str) -> bool:
+    version = version_parts(spec)
+    if version is None:
+        return False
+    if (8, 3, 0) <= version <= (8, 3, 6):
+        return True
+    if (8, 2, 0) <= version <= (8, 2, 4):
+        return True
+    if (8, 0, 0) <= version <= (8, 1, 6):
+        return True
+    if (7, 0, 0) <= version <= (7, 3, 7):
+        return True
+    if (4, 0, 0) <= version <= (6, 4, 5):
+        return True
+    return False
+
+
+def mongoose_pcrw(version) -> bool:
+    if version < (6, 13, 11):
+        return True
+    if (7, 0, 0) <= version <= (7, 8, 11):
+        return True
+    if (8, 0, 0) <= version <= (8, 24, 2):
+        return True
+    if (9, 0, 0) <= version <= (9, 9, 1):
+        return True
+    return False
+
+
+def mongoose_later(version) -> bool:
+    """GHSA-gg4r, GHSA-6972, and GHSA-wr5m share this published range."""
+    if version < (6, 13, 12):
+        return True
+    if (7, 0, 0) <= version <= (7, 8, 12):
+        return True
+    if (8, 0, 0) <= version <= (8, 24, 6):
+        return True
+    if (9, 0, 0) <= version <= (9, 11, 3):
+        return True
+    return False
+
+
+def clerk_backend_band(spec: str):
+    version = version_parts(spec)
+    if version is None:
+        return None
+    if version < (1, 0, 0):
+        return "zero"
+    if (1, 0, 0) <= version <= (2, 33, 8):
+        return "core2"
+    if (3, 0, 0) <= version <= (3, 27, 0):
+        return "core3"
+    return "out"
+
+
+def nov_advisory_status(name: str, src: str) -> str:
+    if name.startswith("nov_nuxt_"):
+        if re.search(r'"nuxt"\s*:\s*"[\^~]', src) and "nuxt@" not in src:
+            return "unknown"
+        spec = resolved_version(src, "nuxt")
+        if spec is None or nuxt_band(spec) is None:
+            return "unknown"
+        band = nuxt_band(spec)
+        if band == "out":
+            return "ok"
+        if "UNHANDLED_FETCH" in src:
+            return "finding"
+        return "unknown"
+
+    if name.startswith("nov_vite_"):
+        if re.search(r'"(?:vite|vite-plus)"\s*:\s*"[\^~]', src) and "@" not in src.split("resolved", 1)[-1]:
+            return "unknown"
+        plus = resolved_version(src, "vite-plus")
+        vite = resolved_version(src, "vite") if plus is None else None
+        spec = plus or vite
+        if spec is None or version_parts(spec) is None:
+            return "unknown"
+        in_range = (plus is not None and version_parts(spec) <= (1, 5, 0)) or (
+            vite is not None and vite_in_range(spec)
+        )
+        if not in_range:
+            return "ok"
+        if "PREVIEW_ONLY" in src:
+            return "ok"
+        if "DEV_SERVER_HOST" in src:
+            return "finding"
+        return "unknown"
+
+    if name.startswith("nov_storage_"):
+        if "@supabase/supabase-js@" in src and "storage-api" not in src:
+            return "unknown"
+        if "HOSTED_NO_VERSION" in src:
+            return "unknown"
+        spec = resolved_version(src, "@supabase/storage-api")
+        if spec is None:
+            image = re.search(r"storage-api:(\d+\.\d+\.\d+)", src)
+            spec = image.group(1) if image else None
+        version = version_parts(spec) if spec else None
+        if version is None:
+            return "unknown"
+        if version <= (1, 89, 9):
+            return "finding"
+        return "ok"
+
+    if name.startswith("nov_mongoose_"):
+        if re.search(r'"mongoose"\s*:\s*"[\^~]', src) and "mongoose@" not in src:
+            return "unknown"
+        spec = resolved_version(src, "mongoose")
+        version = version_parts(spec) if spec else None
+        if version is None:
+            return "unknown"
+        if "countDocuments" in src:
+            return "finding" if mongoose_pcrw(version) else "ok"
+        if "createConnection" in src and "sanitizeFilter: true" in src:
+            return "finding" if mongoose_later(version) else "ok"
+        if "mongoose.set('sanitizeFilter'" in src:
+            return "ok"
+        if "schema.virtual(" in src and "userPath" in src:
+            return "finding" if mongoose_later(version) else "ok"
+        if "skipValidation: true" in src:
+            return "finding" if mongoose_later(version) else "ok"
+        return "unknown"
+
+    if name.startswith("nov_clerk_"):
+        if re.search(r'"@clerk/backend"\s*:\s*"[\^~]', src) and "@clerk/backend@" not in src:
+            return "unknown"
+        if "@clerk/nextjs@5.7.6" in src and "@clerk/backend@" not in src:
+            return "unknown"
+        spec = resolved_version(src, "@clerk/backend")
+        if spec is None or clerk_backend_band(spec) is None:
+            return "unknown"
+        if clerk_backend_band(spec) == "out":
+            return "ok"
+        if "NO_ID_TOKENS" in src:
+            return "ok"
+        if "ISSUES_ID_TOKENS" in src and ("verifyToken" in src or "authenticateRequest" in src):
+            return "finding"
         return "unknown"
 
     return "unknown"

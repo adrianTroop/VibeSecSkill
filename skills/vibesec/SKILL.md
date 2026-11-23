@@ -145,6 +145,18 @@ The checks:
   content, policies without a `TO` role, read policies on buckets that should be owner-only.
 - Guessable paths: object keys built from sequential IDs, user IDs, emails or dates in a
   public bucket. Signed URLs with very long expiry stored in the database.
+- Presigned upload URLs. GHSA-3m3f-pjv4-x2fp (5 Nov 2026) is about the Storage server
+  package `@supabase/storage-api`, not the browser `@supabase/supabase-js` package. The
+  advisory range is `<= 1.89.9`, and the patched release it names is 1.89.10. A presigned
+  PUT that signs only `host` can be given an unsigned `x-amz-copy-source` header and then
+  copies an object the signing key can read, including another bucket. Handing that URL to
+  an untrusted browser is the pattern the advisory describes. Read a self-hosted image tag
+  or the storage server's own lockfile. A hosted Supabase project does not put that server
+  version in the app repo: Needs manual check, not a finding that every hosted project is
+  affected. A frontend SDK version is not the server version. If the resolved server
+  version is 1.89.10 or later, this advisory does not apply. That does not make the bucket
+  policies above safe. Keep the signing key to the buckets it should write, and prefer a
+  short-lived upload that cannot name a different object.
 
 ### 4. Price from the browser
 - Find every checkout, order, cart, subscription or credit purchase handler. Trace where
@@ -525,6 +537,12 @@ The checks:
   process; this can grant admin, bypass checks or, with some template engines, run code.
 - Fix: validate the body with a schema (zod, valibot) that strips unknown keys, reject those
   three keys, use `Object.create(null)` or `Map` for lookup tables, upgrade the library.
+- Mongoose `Schema.prototype.virtual()` is GHSA-6972-9mcm-vhwj (2 Nov 2026), not the same
+  bug as GHSA-wr5m-5jph-8m96. The discriminator advisory says it does not write
+  `Object.prototype`. Ranges for the `virtual()` advisory are in #46. A fixed schema in
+  the repo is not evidence that a dynamic `virtual(name)` is safe. Apply it only when the
+  resolved `mongoose` version is inside that advisory and a virtual path can come from
+  outside the code.
 
 ### 35. Server-side template injection (SSTI)
 - User input used as the template source, not as a value: `Handlebars.compile(userText)`,
@@ -611,6 +629,12 @@ The checks:
 - Fix: parameters (`$queryRaw` tagged template, `sql` tagged template, `$1` placeholders),
   `format('%I', ...)` and `USING` in plpgsql, validate the body with a schema so operators like
   `$ne` cannot get in.
+- Mongoose query-selector bugs are separate advisories in #46. `countDocuments()` missing
+  `sanitizeFilter` is GHSA-pcrw-h46h-c93h. A connection option `{ sanitizeFilter: true }`
+  that does not run is GHSA-gg4r-jv3p-qx3c. `mongoose.set('sanitizeFilter', true)` and a
+  per-query `.sanitizeFilter()` are outside the connection-option advisory. A schema that
+  casts fields does not replace either fix. A discriminator key taken from user input is
+  GHSA-wr5m-5jph-8m96, and that advisory is not prototype pollution.
 
 ### 42. CORS and CSRF
 - CORS: `Access-Control-Allow-Origin: *` together with `Access-Control-Allow-Credentials:
@@ -704,6 +728,66 @@ The checks:
   commit the lockfile, enable Dependabot alerts.
 - MCP servers started with `npx` or `uvx` are in scope even when they are missing from
   `package.json`. Apply the inventory in #9. Do not run them.
+- Use the resolved lockfile or an exact `==` pin. A range such as `^4.0.0` with no lock is
+  Needs manual check. A version patched for one advisory below is not "safe" for the
+  others. Do not install a package to test it.
+- Nuxt GHSA-96x6-fvhx-49hg (2 Nov 2026), package `nuxt`. Affected ranges on the advisory:
+  `>= 4.0.0 < 4.6.4` and `>= 3.0.0 < 4.0.0`. The only patched release it names is 4.6.4.
+  Nuxt 3 is end of life on that page and gets no 3.x patch. Move a 3.x app to the patched
+  4.x release, or use the workaround on the advisory. An unhandled throw during server
+  rendering, a plugin, or route middleware can put the upstream URL, query string, and
+  error body in the client error payload. `createError`, `showError`, `useFetch`,
+  `useAsyncData`, and `server/api` routes are outside that bug. The dependency being in
+  range is not the same as a leak: Vulnerable only when you can see an unhandled server
+  fetch or throw on a rendered page. If the version is in range and you cannot see every
+  page, Needs manual check. A resolved 4.6.4, or a later 4.x outside `< 4.6.4`, is not
+  this finding. On an app the user owns, open a failing page while signed out and check
+  the error payload for an internal URL or token. Do not do that on someone else's site.
+  If a token may already have been in an error URL, rotate it.
+- Vite GHSA-p4f5-76q4-ffq7 (10 Nov 2026). Package `vite`, only the dev server, and only
+  when it is explicitly exposed with `--host` or `server.host`. Affected ranges and the
+  patched release named for each: `4.0.0` through `6.4.5` patched by 6.4.6 (no 4.x or 5.x
+  patch is named), `7.0.0` through `7.3.7` patched by 7.3.8, `8.0.0` through `8.1.6`
+  patched by 8.1.7, `8.2.0` through `8.2.4` patched by 8.2.5, `8.3.0` through `8.3.6`
+  patched by 8.3.7. Package `vite-plus` at `<= 1.5.0` is patched by 1.5.1. A `vite preview`
+  server or a static build is not this advisory. A `server.host` setting shows the process
+  is willing to listen beyond localhost. It does not prove a firewall lets the internet in.
+  If you cannot see the bind or the firewall, Needs manual check, not Safe and not a
+  confirmed public compromise. Serve production with the built assets, not `vite` dev.
+  Do not send a request that tries to inject a module.
+- `@clerk/backend` GHSA-wpqf-h9rq-rg73 (12 Nov 2026). This is not the Astro attribute
+  advisory. `authenticateRequest()` and `verifyToken()` could accept an OIDC ID token as
+  a session token when that Clerk instance issues ID tokens. Affected ranges on the page:
+  `< 1.0.0`, `>= 1.0.0 <= 2.33.8`, and `>= 3.0.0 <= 3.27.0`. The patched-versions field on
+  the advisory is empty. The recommended actions name 3.28.0 or later for 3.x, and 2.33.9
+  or later for 1.x and 2.x. 0.x has no patch. A server-side token-category change is not a
+  substitute for the library upgrade: `verifyToken()` stays uncovered until that upgrade,
+  and `npm update @clerk/backend` does nothing when the framework pins 1.x exactly. The
+  advisory names those pins as `@clerk/nextjs` before 5.7.7, `@clerk/remix` before 4.4.0,
+  `@clerk/astro` before 1.6.0, and `@clerk/fastify` before 2.1.0. Read `npm why` or the
+  lockfile for the resolved `@clerk/backend`. If the instance does not issue ID tokens,
+  the advisory says it is not affected. If you cannot see that setting, Needs manual check.
+- Mongoose, four advisories, four ranges. Do not merge them into one floor.
+  - GHSA-pcrw-h46h-c93h (2 Nov 2026): `countDocuments()` skips `sanitizeFilter`. Affected
+    `< 6.13.11`, `7.0.0` through `7.8.11`, `8.0.0` through `8.24.2`, and `9.0.0` through
+    `9.9.1`. Patched lines named: `^6.13.11`, `^7.8.12`, `^8.24.3`, `^9.9.2`.
+  - GHSA-gg4r-jv3p-qx3c (2 Nov 2026): `{ sanitizeFilter: true }` on `connect` or
+    `createConnection` is stored and not applied. Affected `< 6.13.12`, `7.0.0` through
+    `7.8.12`, `8.0.0` through `8.24.6`, and `9.0.0` through `9.11.3`. Patched lines named:
+    `^6.13.12`, `^7.8.13`, `^8.24.7`, `^9.11.4`. Global `mongoose.set('sanitizeFilter')`
+    and a per-query `.sanitizeFilter()` are not this bug. 9.9.2 fixes the
+    `countDocuments` advisory and is still inside this one.
+  - GHSA-6972-9mcm-vhwj (2 Nov 2026): `schema.virtual()` with a path that contains
+    `__proto__`, `constructor`, or `prototype`. Same affected and patched lines as
+    GHSA-gg4r-jv3p-qx3c. Only when a virtual path is not a literal in your source.
+  - GHSA-wr5m-5jph-8m96 (2 Nov 2026): a discriminator key from a document or filter can
+    match an inherited property. Same affected and patched lines as GHSA-gg4r-jv3p-qx3c.
+    The advisory says this does not write `Object.prototype`. Schema validation does not
+    replace the upgrade. `bulkWrite` with `skipValidation: true` on untrusted documents
+    is the schema-bypass case.
+  A resolved version inside an advisory, with that call or option visible, is Vulnerable
+  for that advisory. The version in range and the call not visible: Needs manual check.
+  A range with no lock: Needs manual check.
 
 ### 47. Unverified webhooks
 - Every webhook handler: Stripe, Paddle, Lemon Squeezy, Clerk, Supabase auth hooks and
@@ -862,6 +946,9 @@ Write `vibesec-report.md` in the project root with this structure:
    - #39: logged in as one test account, open a record URL that belongs to a second test
      account you own; it must return 404 or 403. Never try IDs of real users.
    - #46: run `npm audit` (or the stack's equivalent) locally and list Critical and High.
+     For a Nuxt app the user owns, open one failing page while signed out and read the
+     error payload. An internal URL or token in that payload is a failure. Do not send a
+     crafted Vite module request, and do not run it against a site the user does not own.
 
 After saving the report, show the summary table in the chat and ask which issue to fix first.
 Fix one issue at a time, show the diff before applying, and wait for an explicit yes. Do not
