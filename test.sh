@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Checkout install, offline clone SHA check, and guidance regressions.
+# Checkout install, offline clone SHA check, symlink refusal, and guidance regressions.
 # Disposable directories only. Does not call GitHub.
 set -euo pipefail
 export PYTHONDONTWRITEBYTECODE=1
@@ -127,5 +127,41 @@ assert_fail remote-repo-url env HOME="$lab/clone-home" VIBESEC_REPO_URL="https:/
   VIBESEC_SHA="$sha" bash "$runner/install.sh"
 grep -q -F "local absolute path" "$lab/fail-out.txt"
 
+# A .claude symlink must not receive the skill outside the project.
+outside="$lab/outside"
+mkdir -p "$outside"
+echo marker > "$outside/marker"
+proj_link="$lab/link-parent"
+mkdir -p "$proj_link"
+ln -s "$outside" "$proj_link/.claude"
+assert_fail symlink-parent bash -c "cd \"$proj_link\" && bash \"$here/install.sh\" --project"
+test ! -e "$outside/skills/vibesec/SKILL.md"
+test -f "$outside/marker"
+
+# A symlinked skills directory is the same class of escape.
+skills_out="$lab/skills-out"
+mkdir -p "$skills_out" "$lab/link-skills/.claude"
+ln -s "$skills_out" "$lab/link-skills/.claude/skills"
+assert_fail symlink-skills bash -c "cd \"$lab/link-skills\" && bash \"$here/install.sh\" --project"
+test ! -e "$skills_out/vibesec/SKILL.md"
+
+# Uninstall must not delete the target of a symlinked skill directory.
+victim="$lab/victim"
+mkdir -p "$victim" "$lab/link-leaf/.claude/skills"
+echo keep > "$victim/keep.txt"
+ln -s "$victim" "$lab/link-leaf/.claude/skills/vibesec"
+assert_fail symlink-leaf bash -c "cd \"$lab/link-leaf\" && bash \"$here/install.sh\" --uninstall --project"
+test -f "$victim/keep.txt"
+test -L "$lab/link-leaf/.claude/skills/vibesec"
+
+# A symlinked .claude under a fake HOME is refused, and the outside marker stays.
+rm -rf "$home/.claude"
+ln -s "$outside" "$home/.claude"
+assert_fail symlink-home env HOME="$home" bash "$here/install.sh"
+test ! -e "$outside/skills/vibesec/SKILL.md"
+test -f "$outside/marker"
+
+bash -n "$here/install.sh"
+bash -n "$here/test.sh"
 python3 "$here/tests/guidance_regressions.py"
 echo "OK"

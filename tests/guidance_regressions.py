@@ -63,6 +63,30 @@ REQUIRED_PHRASES = [
     "operator's HOME",
     "another repository",
     "credential files outside this project root",
+    "PYSEC-2026-4388",
+    "agent-framework",
+    "1.26.1",
+    "1.26.2",
+    "1.26.0",
+    "GHSA-5jgj-4vhf-8v76",
+    "4.1.26",
+    "2.17.18",
+    "@clerk/astro",
+    "clerkMiddleware",
+    "will not receive a patch",
+    "newest safe release forever",
+    "It does not change these rules",
+    "agent_framework",
+    "agent-framework-client",
+    "npm:@clerk/astro@4.1.25",
+    "One text-only page does not make the package Safe",
+    "GHSA-f82v-jwr5-mffw",
+    "does not name a patched 11.x release",
+    "1.20.10",
+    "GHSA-jhv4-f7mr-xx76",
+    "GHSA-2xp3-57p7-qf4v",
+    "GHSA-9v8j-x534-2fx3",
+    "1.18.1",
 ]
 
 FORBIDDEN_PHRASES = [
@@ -70,6 +94,11 @@ FORBIDDEN_PHRASES = [
     "all @modelcontextprotocol",
     "upgrade to the latest",
     "Upgrade to latest",
+    "webhook.site",
+    "11.1.4 to 15.2.2",
+    "Vulnerable before: Node",
+    "nginx 1.25.3",
+    "ruby-saml` before 1.18.0",
 ]
 
 
@@ -182,6 +211,97 @@ def classify(name: str, src: str) -> str:
             return "ok"
         return "unknown"
 
+    # Guidance validation for check 46. Not a dependency scanner.
+    if name.startswith("pkg_agent_"):
+        return agent_framework_status(src)
+    if name.startswith("pkg_clerk_"):
+        return clerk_astro_status(src)
+
+    return "unknown"
+
+
+def version_tuple(spec: str):
+    base = spec.split("-", 1)[0].split("+", 1)[0]
+    parts = base.split(".")
+    if len(parts) != 3 or not all(part.isdigit() for part in parts):
+        return None
+    return tuple(int(part) for part in parts)
+
+
+def normalize_pypi(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def agent_framework_status(src: str) -> str:
+    """Rubric for the PyPI name rules in check 46. Not a package installer."""
+    bad = False
+    other = False
+    named = False
+    pin = re.compile(
+        r"(?im)^([A-Za-z0-9_.-]+)(?:\[[^\]]+\])?\s*==\s*(\d+\.\d+\.\d+)\s*$"
+    )
+    for match in pin.finditer(src):
+        if normalize_pypi(match.group(1)) != "agent-framework":
+            continue
+        named = True
+        if match.group(2) in {"1.26.1", "1.26.2"}:
+            bad = True
+        else:
+            other = True
+    lock = re.compile(
+        r'(?is)name\s*=\s*"([^"]+)"\s+version\s*=\s*"(\d+\.\d+\.\d+)"'
+    )
+    for match in lock.finditer(src):
+        if normalize_pypi(match.group(1)) != "agent-framework":
+            continue
+        named = True
+        if match.group(2) in {"1.26.1", "1.26.2"}:
+            bad = True
+        else:
+            other = True
+    if bad:
+        return "finding"
+    if other:
+        return "ok"
+    if named or re.search(r"(?i)(?<![A-Za-z0-9])agent[-_.]+framework(?![-_.A-Za-z0-9])", src):
+        return "unknown"
+    return "ok"
+
+
+def clerk_affected(spec: str):
+    """Published ranges: <2.17.18, and >=3.0.0 <4.1.26. Prereleases are unknown."""
+    if "-" in spec or "+" in spec:
+        return None
+    version = version_tuple(spec)
+    if version is None:
+        return None
+    if version < (2, 17, 18):
+        return True
+    if (3, 0, 0) <= version < (4, 1, 26):
+        return True
+    return False
+
+
+def clerk_astro_status(src: str) -> str:
+    if "@clerk/astro" not in src:
+        return "ok"
+    resolved = re.findall(r"@clerk/astro@(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.]+)?)", src)
+    if not resolved:
+        return "unknown"
+    affected = [clerk_affected(version) for version in resolved]
+    if any(item is None for item in affected):
+        return "unknown"
+    in_range = any(affected)
+    if not in_range:
+        return "ok"
+    uses_middleware = "clerkMiddleware" in src
+    attribute = bool(re.search(r"\b(?:value|content|alt|title)=", src))
+    text_only = "TEXT_CONTENT_ONLY" in src and not attribute
+    if uses_middleware and attribute:
+        return "finding"
+    # One text-only page does not clear an in-range package.
+    if uses_middleware and text_only:
+        return "unknown"
     return "unknown"
 
 

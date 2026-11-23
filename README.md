@@ -45,7 +45,7 @@ git clone --branch v1.3.0 --depth 1 https://github.com/adrianTroop/VibeSecSkill 
 ./install.sh --uninstall  # remove (add --project for the project copy)
 ```
 
-The installer is idempotent and needs no sudo. It writes only under `~/.claude` or `./.claude`. Running `./install.sh` from a checkout installs the files beside the script. Re-run the same command you used. An old piped command reinstalls the script stored at that old tag.
+The installer is idempotent and needs no sudo. It writes under `~/.claude` or `./.claude`. If one of those directories is already a symlink, the script stops instead of following it. That check sees the path when the script looks. It does not close a race if the path is swapped afterward. Running `./install.sh` from a checkout installs the files beside the script. Re-run the same command you used. An old piped command reinstalls the script stored at that old tag.
 
 As a plugin instead (namespaced as `/vibesec:vibesec`):
 
@@ -138,7 +138,7 @@ What happens:
 | 43 | Mass assignment: a profile update that also sets `role: "admin"`, `credits`, or a server-owned Stripe customer id |
 | 44 | Unprotected admin pages, Next.js server actions, debug and cron routes, preview or share URLs used as the only access control, seeded admin passwords, and `ADMIN_EMAIL` promotion |
 | 45 | File uploads: no type or size check, HTML or SVG served from your domain |
-| 46 | Fake or vulnerable packages: AI-invented names (slopsquatting), typosquats, install scripts, and MCP servers launched outside package.json |
+| 46 | Fake or vulnerable packages: AI-invented names (slopsquatting), typosquats, install scripts, and MCP servers launched outside package.json. Also PyPI `agent-framework` 1.26.1 and 1.26.2, and `@clerk/astro` GHSA-5jgj-4vhf-8v76 when the resolved version is in the published range |
 | 47 | Unverified webhooks: fake "payment succeeded" events from anyone who finds the URL |
 | 48 | Cookies and sessions: missing `HttpOnly` / `Secure` / `SameSite`, tokens in `localStorage`, step-up on sensitive changes, email-change notification, and revocation that a cookie cache can outlive |
 | 49 | Untrusted setup and agent instructions: download-and-run or obfuscated commands in the README, AGENTS.md, CLAUDE.md, install scripts, or CI. Flag them for review. Do not run them |

