@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Regression checks for vibeSec guidance.
+"""Phrase and rubric checks for the skill text.
 
-Confirms the skill, README, and plugin stay in sync, and that small fixtures
-are classified the way the new checks describe. This is not an application scanner.
+A fixture passes when this file's small classifier, or a required phrase, still
+matches the rule written in SKILL.md. That is not a running detector, not an
+assistant, and not evidence that an audit would find the bug. Installer
+boundaries are checked by test.sh. ShellCheck is a separate command.
 """
 
+import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -52,6 +56,54 @@ REQUIRED_PHRASES = [
     ".claude/settings.local.json",
     "Needs manual check",
     "rotate first",
+    "Refuse an absolute path",
+    "directory inside it",
+    "that same project root",
+    "Do not follow a symlink",
+    "operator's HOME",
+    "another repository",
+    "credential files outside this project root",
+    "PYSEC-2026-4388",
+    "agent-framework",
+    "1.26.1",
+    "1.26.2",
+    "1.26.0",
+    "GHSA-5jgj-4vhf-8v76",
+    "4.1.26",
+    "2.17.18",
+    "@clerk/astro",
+    "clerkMiddleware",
+    "will not receive a patch",
+    "newest safe release forever",
+    "It does not change these rules",
+    "agent_framework",
+    "agent-framework-client",
+    "npm:@clerk/astro@4.1.25",
+    "One text-only page does not make the package Safe",
+    "GHSA-f82v-jwr5-mffw",
+    "does not name a patched 11.x release",
+    "1.20.10",
+    "GHSA-jhv4-f7mr-xx76",
+    "GHSA-2xp3-57p7-qf4v",
+    "GHSA-9v8j-x534-2fx3",
+    "1.18.1",
+    "GHSA-96x6-fvhx-49hg",
+    "4.6.4",
+    "GHSA-p4f5-76q4-ffq7",
+    "6.4.6",
+    "8.3.7",
+    "vite-plus",
+    "GHSA-3m3f-pjv4-x2fp",
+    "1.89.10",
+    "GHSA-pcrw-h46h-c93h",
+    "GHSA-gg4r-jv3p-qx3c",
+    "GHSA-6972-9mcm-vhwj",
+    "GHSA-wr5m-5jph-8m96",
+    "9.11.4",
+    "GHSA-wpqf-h9rq-rg73",
+    "3.28.0",
+    "2.33.9",
+    "patched-versions field on the advisory is empty",
 ]
 
 FORBIDDEN_PHRASES = [
@@ -59,6 +111,11 @@ FORBIDDEN_PHRASES = [
     "all @modelcontextprotocol",
     "upgrade to the latest",
     "Upgrade to latest",
+    "webhook.site",
+    "11.1.4 to 15.2.2",
+    "Vulnerable before: Node",
+    "nginx 1.25.3",
+    "ruby-saml` before 1.18.0",
 ]
 
 
@@ -67,9 +124,25 @@ def fail(message: str) -> None:
     sys.exit(1)
 
 
+def unguarded_secret_literal(src: str) -> bool:
+    """True when a fallback literal is not inside the preceding development check."""
+    patterns = (
+        re.compile(r"""process\.env\.[A-Z0-9_]+\s*(?:\|\||\?\?)\s*['"]"""),
+        re.compile(r"""os\.environ\.get\(\s*['"][A-Z0-9_]+['"]\s*,\s*['"]"""),
+    )
+    for pattern in patterns:
+        for match in pattern.finditer(src):
+            window = src[max(0, match.start() - 200) : match.start()]
+            if 'NODE_ENV === "development"' not in window:
+                return True
+    return False
+
+
 def classify(name: str, src: str) -> str:
     if name.startswith("rate_limit_"):
-        joined = bool(re.search(r"""\bip\s*\+\s*['"]\|['"]\s*\+\s*email\b""", src))
+        joined = bool(re.search(r"""\bip\s*\+\s*['"]\|['"]\s*\+\s*email\b""", src)) or bool(
+            re.search(r"""\$\{ip\}\s*\|\s*\$\{email\}""", src)
+        ) or bool(re.search(r"""\{ip\}\s*\|\s*\{email\}""", src))
         split = "limitIp" in src and "limitAccount" in src
         if joined and not split:
             return "finding"
@@ -85,7 +158,7 @@ def classify(name: str, src: str) -> str:
         )
         dev_guard = 'NODE_ENV === "development"' in src
         fail_closed = "throw new Error" in src and "is required" in src
-        if literal and not dev_guard:
+        if unguarded_secret_literal(src):
             return "finding"
         if fail_closed and (not literal or dev_guard):
             return "ok"
@@ -114,8 +187,12 @@ def classify(name: str, src: str) -> str:
     if name.startswith("setup_"):
         if "base64 -d" in src and "bash" in src:
             return "finding"
-        if re.search(r"curl\b.*\|\s*bash", src):
-            return "review"
+        piped = re.search(r"(?:curl|wget)\b.*\|\s*(?:bash|sh|iex)\b", src)
+        if piped:
+            pinned = re.search(r"\bv?\d+\.\d+\.\d+\b", src) or re.search(
+                r"\b[0-9a-f]{40}\b", src
+            )
+            return "review" if pinned else "finding"
         return "unknown"
 
     if name.startswith("mcp_"):
@@ -151,11 +228,314 @@ def classify(name: str, src: str) -> str:
             return "ok"
         return "unknown"
 
+    # Rubrics for written version rules. Not a dependency scanner or an assistant run.
+    if name.startswith("pkg_agent_"):
+        return agent_framework_status(src)
+    if name.startswith("pkg_clerk_"):
+        return clerk_astro_status(src)
+    if name.startswith("nov_"):
+        return nov_advisory_status(name, src)
+
     return "unknown"
+
+
+def version_tuple(spec: str):
+    base = spec.split("-", 1)[0].split("+", 1)[0]
+    parts = base.split(".")
+    if len(parts) != 3 or not all(part.isdigit() for part in parts):
+        return None
+    return tuple(int(part) for part in parts)
+
+
+def normalize_pypi(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def agent_framework_status(src: str) -> str:
+    """Rubric for the PyPI name rules in check 46. Not a package installer."""
+    bad = False
+    other = False
+    named = False
+    pin = re.compile(
+        r"(?im)^([A-Za-z0-9_.-]+)(?:\[[^\]]+\])?\s*==\s*(\d+\.\d+\.\d+)\s*$"
+    )
+    for match in pin.finditer(src):
+        if normalize_pypi(match.group(1)) != "agent-framework":
+            continue
+        named = True
+        if match.group(2) in {"1.26.1", "1.26.2"}:
+            bad = True
+        else:
+            other = True
+    lock = re.compile(
+        r'(?is)name\s*=\s*"([^"]+)"\s+version\s*=\s*"(\d+\.\d+\.\d+)"'
+    )
+    for match in lock.finditer(src):
+        if normalize_pypi(match.group(1)) != "agent-framework":
+            continue
+        named = True
+        if match.group(2) in {"1.26.1", "1.26.2"}:
+            bad = True
+        else:
+            other = True
+    if bad:
+        return "finding"
+    if other:
+        return "ok"
+    if named or re.search(r"(?i)(?<![A-Za-z0-9])agent[-_.]+framework(?![-_.A-Za-z0-9])", src):
+        return "unknown"
+    return "ok"
+
+
+def clerk_affected(spec: str):
+    """Published ranges: <2.17.18, and >=3.0.0 <4.1.26. Prereleases are unknown."""
+    if "-" in spec or "+" in spec:
+        return None
+    version = version_tuple(spec)
+    if version is None:
+        return None
+    if version < (2, 17, 18):
+        return True
+    if (3, 0, 0) <= version < (4, 1, 26):
+        return True
+    return False
+
+
+def clerk_astro_status(src: str) -> str:
+    if "@clerk/astro" not in src:
+        return "ok"
+    resolved = re.findall(r"@clerk/astro@(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.]+)?)", src)
+    if not resolved:
+        return "unknown"
+    affected = [clerk_affected(version) for version in resolved]
+    if any(item is None for item in affected):
+        return "unknown"
+    in_range = any(affected)
+    if not in_range:
+        return "ok"
+    uses_middleware = "clerkMiddleware" in src
+    attribute = bool(re.search(r"\b(?:value|content|alt|title)=", src))
+    text_only = "TEXT_CONTENT_ONLY" in src and not attribute
+    if uses_middleware and attribute:
+        return "finding"
+    # One text-only page does not clear an in-range package.
+    if uses_middleware and text_only:
+        return "unknown"
+    return "unknown"
+
+
+
+def version_parts(spec: str):
+    if "-" in spec or "+" in spec:
+        return None
+    bits = spec.split(".")
+    if len(bits) != 3 or not all(bit.isdigit() for bit in bits):
+        return None
+    return tuple(int(bit) for bit in bits)
+
+
+def resolved_version(src: str, package: str):
+    match = re.search(rf"{re.escape(package)}@(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.]+)?)", src)
+    if not match:
+        return None
+    return match.group(1)
+
+
+def nuxt_band(spec: str):
+    version = version_parts(spec)
+    if version is None:
+        return None
+    if (3, 0, 0) <= version < (4, 0, 0):
+        return "eol3"
+    if (4, 0, 0) <= version < (4, 6, 4):
+        return "four"
+    return "out"
+
+
+def vite_in_range(spec: str) -> bool:
+    version = version_parts(spec)
+    if version is None:
+        return False
+    if (8, 3, 0) <= version <= (8, 3, 6):
+        return True
+    if (8, 2, 0) <= version <= (8, 2, 4):
+        return True
+    if (8, 0, 0) <= version <= (8, 1, 6):
+        return True
+    if (7, 0, 0) <= version <= (7, 3, 7):
+        return True
+    if (4, 0, 0) <= version <= (6, 4, 5):
+        return True
+    return False
+
+
+def mongoose_pcrw(version) -> bool:
+    if version < (6, 13, 11):
+        return True
+    if (7, 0, 0) <= version <= (7, 8, 11):
+        return True
+    if (8, 0, 0) <= version <= (8, 24, 2):
+        return True
+    if (9, 0, 0) <= version <= (9, 9, 1):
+        return True
+    return False
+
+
+def mongoose_later(version) -> bool:
+    """GHSA-gg4r, GHSA-6972, and GHSA-wr5m share this published range."""
+    if version < (6, 13, 12):
+        return True
+    if (7, 0, 0) <= version <= (7, 8, 12):
+        return True
+    if (8, 0, 0) <= version <= (8, 24, 6):
+        return True
+    if (9, 0, 0) <= version <= (9, 11, 3):
+        return True
+    return False
+
+
+def clerk_backend_band(spec: str):
+    version = version_parts(spec)
+    if version is None:
+        return None
+    if version < (1, 0, 0):
+        return "zero"
+    if (1, 0, 0) <= version <= (2, 33, 8):
+        return "core2"
+    if (3, 0, 0) <= version <= (3, 27, 0):
+        return "core3"
+    return "out"
+
+
+def nov_advisory_status(name: str, src: str) -> str:
+    if name.startswith("nov_nuxt_"):
+        if re.search(r'"nuxt"\s*:\s*"[\^~]', src) and "nuxt@" not in src:
+            return "unknown"
+        spec = resolved_version(src, "nuxt")
+        if spec is None or nuxt_band(spec) is None:
+            return "unknown"
+        band = nuxt_band(spec)
+        if band == "out":
+            return "ok"
+        if "UNHANDLED_FETCH" in src:
+            return "finding"
+        return "unknown"
+
+    if name.startswith("nov_vite_"):
+        if re.search(r'"(?:vite|vite-plus)"\s*:\s*"[\^~]', src) and "@" not in src.split("resolved", 1)[-1]:
+            return "unknown"
+        plus = resolved_version(src, "vite-plus")
+        vite = resolved_version(src, "vite") if plus is None else None
+        spec = plus or vite
+        if spec is None or version_parts(spec) is None:
+            return "unknown"
+        in_range = (plus is not None and version_parts(spec) <= (1, 5, 0)) or (
+            vite is not None and vite_in_range(spec)
+        )
+        if not in_range:
+            return "ok"
+        if "PREVIEW_ONLY" in src:
+            return "ok"
+        if "DEV_SERVER_HOST" in src:
+            return "finding"
+        return "unknown"
+
+    if name.startswith("nov_storage_"):
+        if "@supabase/supabase-js@" in src and "storage-api" not in src:
+            return "unknown"
+        if "HOSTED_NO_VERSION" in src:
+            return "unknown"
+        spec = resolved_version(src, "@supabase/storage-api")
+        if spec is None:
+            image = re.search(r"storage-api:(\d+\.\d+\.\d+)", src)
+            spec = image.group(1) if image else None
+        version = version_parts(spec) if spec else None
+        if version is None:
+            return "unknown"
+        if version <= (1, 89, 9):
+            return "finding"
+        return "ok"
+
+    if name.startswith("nov_mongoose_"):
+        if re.search(r'"mongoose"\s*:\s*"[\^~]', src) and "mongoose@" not in src:
+            return "unknown"
+        spec = resolved_version(src, "mongoose")
+        version = version_parts(spec) if spec else None
+        if version is None:
+            return "unknown"
+        if "countDocuments" in src:
+            return "finding" if mongoose_pcrw(version) else "ok"
+        if "createConnection" in src and "sanitizeFilter: true" in src:
+            return "finding" if mongoose_later(version) else "ok"
+        if "mongoose.set('sanitizeFilter'" in src:
+            return "ok"
+        if "schema.virtual(" in src and "userPath" in src:
+            return "finding" if mongoose_later(version) else "ok"
+        if "skipValidation: true" in src:
+            return "finding" if mongoose_later(version) else "ok"
+        return "unknown"
+
+    if name.startswith("nov_clerk_"):
+        if re.search(r'"@clerk/backend"\s*:\s*"[\^~]', src) and "@clerk/backend@" not in src:
+            return "unknown"
+        if "@clerk/nextjs@5.7.6" in src and "@clerk/backend@" not in src:
+            return "unknown"
+        spec = resolved_version(src, "@clerk/backend")
+        if spec is None or clerk_backend_band(spec) is None:
+            return "unknown"
+        if clerk_backend_band(spec) == "out":
+            return "ok"
+        if "NO_ID_TOKENS" in src:
+            return "ok"
+        if "ISSUES_ID_TOKENS" in src and ("verifyToken" in src or "authenticateRequest" in src):
+            return "finding"
+        return "unknown"
+
+    return "unknown"
+
 
 
 def squash(text: str) -> str:
     return re.sub(r"\s+", " ", text)
+
+
+def content_revision(text: str) -> str:
+    normalized = re.sub(r"(?m)^revision:.*$", "revision:", text, count=1)
+    return hashlib.sha256(normalized.encode()).hexdigest()
+
+
+def check_recorded_sha(install: str) -> None:
+    match = re.search(
+        r'^VIBESEC_SHA="\$\{VIBESEC_SHA:-([0-9a-f]{40})\}"',
+        install,
+        re.M,
+    )
+    if not match:
+        fail("installer is missing a 40-hex VIBESEC_SHA default")
+    sha = match.group(1)
+    head = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+    ).strip()
+    if sha == head:
+        fail("VIBESEC_SHA pins the commit that contains the installer")
+    kind = subprocess.check_output(
+        ["git", "cat-file", "-t", sha], cwd=ROOT, text=True
+    ).strip()
+    if kind != "commit":
+        fail(f"VIBESEC_SHA {sha} is {kind}, expected a commit")
+    subprocess.check_call(
+        ["git", "merge-base", "--is-ancestor", sha, "HEAD"], cwd=ROOT
+    )
+    pinned = subprocess.check_output(
+        ["git", "show", f"{sha}:install.sh"], cwd=ROOT, text=True
+    )
+    if f"VIBESEC_SHA:-{sha}" in pinned or f'VIBESEC_SHA="{sha}"' in pinned:
+        fail("recorded SHA appears as the pin inside that same commit")
+    tag = subprocess.check_output(
+        ["git", "rev-parse", "v1.3.0^{commit}"], cwd=ROOT, text=True
+    ).strip()
+    if tag != sha:
+        fail(f"VIBESEC_SHA {sha} is not tag v1.3.0 ({tag})")
 
 
 def main() -> None:
@@ -197,6 +577,12 @@ def main() -> None:
         fail("marketplace description count was not updated")
     if 'VIBESEC_REF="${VIBESEC_REF:-v1.3.0}"' not in install:
         fail("installer pin changed; this branch does not cut a release")
+    check_recorded_sha(install)
+    revision_match = re.search(r"(?m)^revision:\s*([0-9a-f]{64})\s*$", skill)
+    if not revision_match:
+        fail("skill front matter is missing a content revision")
+    if revision_match.group(1) != content_revision(skill):
+        fail("skill revision does not match the skill text")
 
     cases = json.loads(CASES.read_text())
     if len(cases) < 20:
