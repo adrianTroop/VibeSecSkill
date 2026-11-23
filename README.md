@@ -95,7 +95,7 @@ What happens:
 |---|---|
 | 1 | Next.js: middleware bypass via `x-middleware-subrequest` (CVE-2025-29927), outdated version, missing CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy. When the lockfile is inside a published range, also the 3 Nov 2026 cache-partition and Edge cookie-header advisories |
 | 2 | `.git` folder exposed on the live site or copied into build output |
-| 3 | Supabase storage: public buckets with private files, weak storage RLS, guessable paths |
+| 3 | Supabase storage: public buckets with private files, weak storage RLS, guessable paths, and a self-hosted Storage server at or below 1.89.9 when that version is in the repo |
 | 4 | Price from the browser: checkout trusting client-sent price, total, discount or quantity |
 | 5 | Credential stuffing: login with no rate limit, lockout, captcha or breached-password check. Per-IP and per-account limits are separate buckets, not one joined IP and email key |
 | 6 | Open database: tables without RLS, service_role key on the client, anon key reaching sensitive tables, DB open to the internet. Grants, default privileges, and function EXECUTE across migrations, judged separately from RLS |
@@ -126,19 +126,19 @@ What happens:
 | 31 | Postgres views and `SECURITY DEFINER` functions that bypass RLS. Judge the final EXECUTE grants. A scoped public function is allowed |
 | 32 | Weak random tokens: `Math.random()` or timestamps for reset links, invites, OTPs |
 | 33 | Padding oracle and home-made encryption (AES-CBC without a MAC) |
-| 34 | Prototype pollution: `__proto__` in deep merge or body parsing |
+| 34 | Prototype pollution: `__proto__` in deep merge or body parsing, including Mongoose `schema.virtual()` when the resolved version is inside GHSA-6972-9mcm-vhwj |
 | 35 | Template injection (SSTI): user text compiled as a template |
 | 36 | XXE: XML, SVG, DOCX or SAML parsing with external entities on |
 | 37 | WebSocket hijacking: no `Origin` check, any user can join any channel |
 | 38 | Unicode usernames: `ᴮᴵᴳᴮᴵᴿᴰ` vs `bigbird` account takeover |
 | 39 | IDOR: change an ID in the URL and see someone else's order, invoice or file |
 | 40 | XSS: user text or AI output rendered as HTML, `javascript:` links, user SVGs |
-| 41 | SQL and NoSQL injection: raw queries built from user input, Mongo `$ne` tricks |
+| 41 | SQL and NoSQL injection: raw queries built from user input, Mongo `$ne` tricks, and the separate Mongoose `sanitizeFilter` advisories |
 | 42 | CORS and CSRF: any site can call your API as the logged-in user |
 | 43 | Mass assignment: a profile update that also sets `role: "admin"`, `credits`, or a server-owned Stripe customer id |
 | 44 | Unprotected admin pages, Next.js server actions, debug and cron routes, preview or share URLs used as the only access control, seeded admin passwords, and `ADMIN_EMAIL` promotion |
 | 45 | File uploads: no type or size check, HTML or SVG served from your domain |
-| 46 | Fake or vulnerable packages: AI-invented names (slopsquatting), typosquats, install scripts, and MCP servers launched outside package.json. Also PyPI `agent-framework` 1.26.1 and 1.26.2, and `@clerk/astro` GHSA-5jgj-4vhf-8v76 when the resolved version is in the published range |
+| 46 | Fake or vulnerable packages, plus resolved-version checks for agent-framework, `@clerk/astro`, Nuxt, Vite, Mongoose, and `@clerk/backend` |
 | 47 | Unverified webhooks: fake "payment succeeded" events from anyone who finds the URL |
 | 48 | Cookies and sessions: missing `HttpOnly` / `Secure` / `SameSite`, tokens in `localStorage`, step-up on sensitive changes, email-change notification, and revocation that a cookie cache can outlive |
 | 49 | Untrusted setup and agent instructions: download-and-run or obfuscated commands in the README, AGENTS.md, CLAUDE.md, install scripts, or CI. Flag them for review. Do not run them |

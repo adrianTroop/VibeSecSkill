@@ -293,5 +293,330 @@
     "name": "pkg_clerk_zero",
     "expect": "finding",
     "body": "resolved @clerk/astro@0.9.0\nexport const onRequest = clerkMiddleware()\n<input value={query} />\n"
+  },
+  {
+    "name": "nov_nuxt_463_fetch",
+    "expect": "finding",
+    "body": "resolved nuxt@4.6.3\nUNHANDLED_FETCH\nawait $fetch(url)\n"
+  },
+  {
+    "name": "nov_nuxt_464_fetch",
+    "expect": "ok",
+    "body": "resolved nuxt@4.6.4\nUNHANDLED_FETCH\nawait $fetch(url)\n"
+  },
+  {
+    "name": "nov_nuxt_400_fetch",
+    "expect": "finding",
+    "body": "resolved nuxt@4.0.0\nUNHANDLED_FETCH\n"
+  },
+  {
+    "name": "nov_nuxt_316_fetch",
+    "expect": "finding",
+    "body": "resolved nuxt@3.16.0\nUNHANDLED_FETCH\n"
+  },
+  {
+    "name": "nov_nuxt_316_create",
+    "expect": "unknown",
+    "body": "resolved nuxt@3.16.0\nthrow createError({ statusCode: 404 })\n"
+  },
+  {
+    "name": "nov_nuxt_range",
+    "expect": "unknown",
+    "body": "\"nuxt\": \"^4.0.0\"\n"
+  },
+  {
+    "name": "nov_nuxt_217",
+    "expect": "ok",
+    "body": "resolved nuxt@2.17.0\nUNHANDLED_FETCH\n"
+  },
+  {
+    "name": "nov_nuxt_beta",
+    "expect": "unknown",
+    "body": "resolved nuxt@4.6.4-beta.1\nUNHANDLED_FETCH\n"
+  },
+  {
+    "name": "nov_vite_836_host",
+    "expect": "finding",
+    "body": "resolved vite@8.3.6\nDEV_SERVER_HOST\nserver: { host: true }\n"
+  },
+  {
+    "name": "nov_vite_837_host",
+    "expect": "ok",
+    "body": "resolved vite@8.3.7\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_830_host",
+    "expect": "finding",
+    "body": "resolved vite@8.3.0\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_824_host",
+    "expect": "finding",
+    "body": "resolved vite@8.2.4\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_825_host",
+    "expect": "ok",
+    "body": "resolved vite@8.2.5\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_816_host",
+    "expect": "finding",
+    "body": "resolved vite@8.1.6\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_817_host",
+    "expect": "ok",
+    "body": "resolved vite@8.1.7\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_737_host",
+    "expect": "finding",
+    "body": "resolved vite@7.3.7\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_738_host",
+    "expect": "ok",
+    "body": "resolved vite@7.3.8\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_645_host",
+    "expect": "finding",
+    "body": "resolved vite@6.4.5\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_646_host",
+    "expect": "ok",
+    "body": "resolved vite@6.4.6\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_400_host",
+    "expect": "finding",
+    "body": "resolved vite@4.0.0\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_540_host",
+    "expect": "finding",
+    "body": "resolved vite@5.4.0\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_836_nohost",
+    "expect": "unknown",
+    "body": "resolved vite@8.3.6\n"
+  },
+  {
+    "name": "nov_vite_836_preview",
+    "expect": "ok",
+    "body": "resolved vite@8.3.6\nPREVIEW_ONLY\nvite preview\n"
+  },
+  {
+    "name": "nov_vite_320_host",
+    "expect": "ok",
+    "body": "resolved vite@3.2.0\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_840_host",
+    "expect": "ok",
+    "body": "resolved vite@8.4.0\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_plus_150",
+    "expect": "finding",
+    "body": "resolved vite-plus@1.5.0\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_plus_151",
+    "expect": "ok",
+    "body": "resolved vite-plus@1.5.1\nDEV_SERVER_HOST\n"
+  },
+  {
+    "name": "nov_vite_range",
+    "expect": "unknown",
+    "body": "\"vite\": \"^5.0.0\"\n"
+  },
+  {
+    "name": "nov_storage_1899",
+    "expect": "finding",
+    "body": "resolved @supabase/storage-api@1.89.9\n"
+  },
+  {
+    "name": "nov_storage_18910",
+    "expect": "ok",
+    "body": "resolved @supabase/storage-api@1.89.10\n"
+  },
+  {
+    "name": "nov_storage_1900",
+    "expect": "ok",
+    "body": "resolved @supabase/storage-api@1.90.0\n"
+  },
+  {
+    "name": "nov_storage_image",
+    "expect": "finding",
+    "body": "image: supabase/storage-api:1.72.4\n"
+  },
+  {
+    "name": "nov_storage_js",
+    "expect": "unknown",
+    "body": "resolved @supabase/supabase-js@2.45.0\n"
+  },
+  {
+    "name": "nov_storage_hosted",
+    "expect": "unknown",
+    "body": "HOSTED_NO_VERSION\nsupabase hosted project\n"
+  },
+  {
+    "name": "nov_mongoose_991_count",
+    "expect": "finding",
+    "body": "resolved mongoose@9.9.1\nUser.countDocuments(req.body)\n"
+  },
+  {
+    "name": "nov_mongoose_992_count",
+    "expect": "ok",
+    "body": "resolved mongoose@9.9.2\nUser.countDocuments(req.body)\n"
+  },
+  {
+    "name": "nov_mongoose_992_connect",
+    "expect": "finding",
+    "body": "resolved mongoose@9.9.2\ncreateConnection(uri, { sanitizeFilter: true })\n"
+  },
+  {
+    "name": "nov_mongoose_9113_connect",
+    "expect": "finding",
+    "body": "resolved mongoose@9.11.3\ncreateConnection(uri, { sanitizeFilter: true })\n"
+  },
+  {
+    "name": "nov_mongoose_9114_connect",
+    "expect": "ok",
+    "body": "resolved mongoose@9.11.4\ncreateConnection(uri, { sanitizeFilter: true })\n"
+  },
+  {
+    "name": "nov_mongoose_61311_count",
+    "expect": "ok",
+    "body": "resolved mongoose@6.13.11\nUser.countDocuments(filter)\n"
+  },
+  {
+    "name": "nov_mongoose_61311_connect",
+    "expect": "finding",
+    "body": "resolved mongoose@6.13.11\ncreateConnection(uri, { sanitizeFilter: true })\n"
+  },
+  {
+    "name": "nov_mongoose_61312_connect",
+    "expect": "ok",
+    "body": "resolved mongoose@6.13.12\ncreateConnection(uri, { sanitizeFilter: true })\n"
+  },
+  {
+    "name": "nov_mongoose_8243_count",
+    "expect": "ok",
+    "body": "resolved mongoose@8.24.3\nUser.countDocuments(filter)\n"
+  },
+  {
+    "name": "nov_mongoose_8246_virtual",
+    "expect": "finding",
+    "body": "resolved mongoose@8.24.6\nschema.virtual(userPath)\n"
+  },
+  {
+    "name": "nov_mongoose_8247_virtual",
+    "expect": "ok",
+    "body": "resolved mongoose@8.24.7\nschema.virtual(userPath)\n"
+  },
+  {
+    "name": "nov_mongoose_7812_count",
+    "expect": "ok",
+    "body": "resolved mongoose@7.8.12\nUser.countDocuments(filter)\n"
+  },
+  {
+    "name": "nov_mongoose_7812_connect",
+    "expect": "finding",
+    "body": "resolved mongoose@7.8.12\ncreateConnection(uri, { sanitizeFilter: true })\n"
+  },
+  {
+    "name": "nov_mongoose_7813_connect",
+    "expect": "ok",
+    "body": "resolved mongoose@7.8.13\ncreateConnection(uri, { sanitizeFilter: true })\n"
+  },
+  {
+    "name": "nov_mongoose_global",
+    "expect": "ok",
+    "body": "resolved mongoose@9.10.0\nmongoose.set('sanitizeFilter', true)\n"
+  },
+  {
+    "name": "nov_mongoose_schema_only",
+    "expect": "unknown",
+    "body": "resolved mongoose@9.10.0\nnew mongoose.Schema({ name: String })\n"
+  },
+  {
+    "name": "nov_mongoose_range",
+    "expect": "unknown",
+    "body": "\"mongoose\": \"^8.0.0\"\n"
+  },
+  {
+    "name": "nov_mongoose_9113_disc",
+    "expect": "finding",
+    "body": "resolved mongoose@9.11.3\nbulkWrite(docs, { skipValidation: true })\n"
+  },
+  {
+    "name": "nov_mongoose_9114_disc",
+    "expect": "ok",
+    "body": "resolved mongoose@9.11.4\nbulkWrite(docs, { skipValidation: true })\n"
+  },
+  {
+    "name": "nov_clerk_327_id",
+    "expect": "finding",
+    "body": "resolved @clerk/backend@3.27.0\nISSUES_ID_TOKENS\nverifyToken(token)\n"
+  },
+  {
+    "name": "nov_clerk_328_id",
+    "expect": "ok",
+    "body": "resolved @clerk/backend@3.28.0\nISSUES_ID_TOKENS\nverifyToken(token)\n"
+  },
+  {
+    "name": "nov_clerk_2338_id",
+    "expect": "finding",
+    "body": "resolved @clerk/backend@2.33.8\nISSUES_ID_TOKENS\nauthenticateRequest(req)\n"
+  },
+  {
+    "name": "nov_clerk_2339_id",
+    "expect": "ok",
+    "body": "resolved @clerk/backend@2.33.9\nISSUES_ID_TOKENS\nverifyToken(token)\n"
+  },
+  {
+    "name": "nov_clerk_100_id",
+    "expect": "finding",
+    "body": "resolved @clerk/backend@1.0.0\nISSUES_ID_TOKENS\nverifyToken(token)\n"
+  },
+  {
+    "name": "nov_clerk_090_id",
+    "expect": "finding",
+    "body": "resolved @clerk/backend@0.9.0\nISSUES_ID_TOKENS\nverifyToken(token)\n"
+  },
+  {
+    "name": "nov_clerk_317_mitigation",
+    "expect": "finding",
+    "body": "resolved @clerk/backend@3.17.0\nISSUES_ID_TOKENS\nauthenticateRequest(req)\n"
+  },
+  {
+    "name": "nov_clerk_327_no_tokens",
+    "expect": "ok",
+    "body": "resolved @clerk/backend@3.27.0\nNO_ID_TOKENS\nverifyToken(token)\n"
+  },
+  {
+    "name": "nov_clerk_327_unknown_instance",
+    "expect": "unknown",
+    "body": "resolved @clerk/backend@3.27.0\nverifyToken(token)\n"
+  },
+  {
+    "name": "nov_clerk_next_pin",
+    "expect": "unknown",
+    "body": "resolved @clerk/nextjs@5.7.6\n"
+  },
+  {
+    "name": "nov_clerk_range",
+    "expect": "unknown",
+    "body": "\"@clerk/backend\": \"^3.0.0\"\n"
+  },
+  {
+    "name": "nov_clerk_400",
+    "expect": "ok",
+    "body": "resolved @clerk/backend@4.0.0\nISSUES_ID_TOKENS\nverifyToken(token)\n"
   }
 ]
